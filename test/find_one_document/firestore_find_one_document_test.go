@@ -12,7 +12,7 @@ import (
 )
 
 // Find One Documents With Filtering
-func Test_Firestore_FindOneDocumentsFilter(t *testing.T) {
+func Test_Firestore_Find_One_Documents_Filter(t *testing.T) {
 	client, err := firestore.NewClient(ctx, project_id, option.WithCredentialsFile(credential_file))
 	if err != nil {
 		t.Errorf("failed open firestore client err: \n%+v\n", err)

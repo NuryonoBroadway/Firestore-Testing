@@ -8,7 +8,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-func Test_Firestore_SeedData(t *testing.T) {
+func Test_Firestore_Seed_Data(t *testing.T) {
 	var (
 		cities = []struct {
 			id string
