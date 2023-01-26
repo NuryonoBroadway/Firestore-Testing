@@ -1,8 +1,9 @@
-package collectionx
+package collectionxserver
 
 import (
 	"context"
 	"encoding/json"
+	collectionxservice "firebaseapi/collectionx/collectionx_service"
 
 	grpc "google.golang.org/grpc"
 )
@@ -18,7 +19,7 @@ func NewServer(source CollectionCore_SourceDocument, grpcOpt ...grpc.ServerOptio
 		srv  = NewCollectionCoreServer(source)
 	)
 
-	RegisterServiceCollectionServer(gsrv, srv)
+	collectionxservice.RegisterServiceCollectionServer(gsrv, srv)
 
 	return gsrv
 }
@@ -26,7 +27,7 @@ func NewServer(source CollectionCore_SourceDocument, grpcOpt ...grpc.ServerOptio
 // Collection Core Implementation
 type server struct {
 	source CollectionCore_SourceDocument
-	UnimplementedServiceCollectionServer
+	collectionxservice.UnimplementedServiceCollectionServer
 }
 
 func NewCollectionCoreServer(source CollectionCore_SourceDocument) *server {
@@ -35,10 +36,10 @@ func NewCollectionCoreServer(source CollectionCore_SourceDocument) *server {
 	}
 }
 
-func (srv *server) Retrive(ctx context.Context, req *RetriveRequest) (*RetriveResponse, error) {
+func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveRequest) (*collectionxservice.RetriveResponse, error) {
 	if req.Payload == nil {
-		return &RetriveResponse{
-			Api: &StandardAPIProto{
+		return &collectionxservice.RetriveResponse{
+			Api: &collectionxservice.StandardAPIProto{
 				Status:  "ERROR",
 				Entity:  "retriveFirestoreDocument",
 				State:   "retriveFirestoreDocumentError",
@@ -49,7 +50,6 @@ func (srv *server) Retrive(ctx context.Context, req *RetriveRequest) (*RetriveRe
 
 	var (
 		paths   = make([]Path, len(req.Payload.Path))
-		sorts   = make([]Sort, len(req.Payload.Sort))
 		filters = make([]Filter, len(req.Payload.Filter))
 	)
 
@@ -59,11 +59,9 @@ func (srv *server) Retrive(ctx context.Context, req *RetriveRequest) (*RetriveRe
 		paths[i].NewDocument = req.Payload.Path[i].NewDocument
 	}
 
-	for i := 0; i < len(req.Payload.Sort); i++ {
-		sorts[i] = Sort{
-			By:  req.Payload.Sort[i].By,
-			Dir: req.Payload.Sort[i].Dir,
-		}
+	sorts := Sort{
+		By:  req.Payload.Sort.By,
+		Dir: req.Payload.Sort.Dir,
 	}
 
 	for i := 0; i < len(req.Payload.Filter); i++ {
@@ -82,7 +80,7 @@ func (srv *server) Retrive(ctx context.Context, req *RetriveRequest) (*RetriveRe
 	}
 
 	var (
-		res = RetriveResponse{}
+		res = collectionxservice.RetriveResponse{}
 		p   = Payload{
 			RootCollection: req.Payload.RootCollection,
 			filter:         filters,
@@ -96,12 +94,12 @@ func (srv *server) Retrive(ctx context.Context, req *RetriveRequest) (*RetriveRe
 
 	retriveRes, err := srv.source.Retrive(ctx, &p)
 	if err != nil {
-		res.Api = &StandardAPIProto{
+		res.Api = &collectionxservice.StandardAPIProto{
 			Status:  "ERROR",
 			Entity:  "retriveFirestoreDocument",
 			State:   "retriveFirestoreDocumentError",
 			Message: "Retrive Firestore Document Failed Read Source Data",
-			Error: &ErrorProto{
+			Error: &collectionxservice.ErrorProto{
 				General: err.Error(),
 			},
 		}
@@ -110,19 +108,19 @@ func (srv *server) Retrive(ctx context.Context, req *RetriveRequest) (*RetriveRe
 
 	data, err := json.Marshal(retriveRes)
 	if err != nil {
-		res.Api = &StandardAPIProto{
+		res.Api = &collectionxservice.StandardAPIProto{
 			Status:  "ERROR",
 			Entity:  "retriveFirestoreDocument",
 			State:   "retriveFirestoreDocumentMarshalResponseError",
 			Message: "Retrive Firestore Document Failed Build Result Data",
-			Error: &ErrorProto{
+			Error: &collectionxservice.ErrorProto{
 				General: err.Error(),
 			},
 		}
 		return &res, nil
 	}
 
-	res.Api = &StandardAPIProto{
+	res.Api = &collectionxservice.StandardAPIProto{
 		Status:  "SUCCESS",
 		Entity:  "retriveFirestoreDocument",
 		State:   "retriveFirestoreDocumentSuccess",

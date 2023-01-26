@@ -1,16 +1,11 @@
 syntax = "proto3";
 
-package collectionx;
+package app;
 
-option go_package = "protobuf/privy/v1/collectionx";
+import "google/protobuf/timestamp.proto";
+// import "google/protobuf/any.proto";
 
-message StandardAPIProto {
-    string status = 1;
-    string entity = 2;
-    string state = 3;
-    string message = 4;
-    ErrorProto error = 5;
-}
+option go_package = "protobuf/privy/v1/app";
 
 
 message ErrorProto {
@@ -21,4 +16,60 @@ message ErrorProto {
 message ValidationErrorProto {
     string key = 1;
     string value = 2;
+}
+
+message StandardAPIProto {
+    string status = 1;
+    string entity = 2;
+    string state = 3;
+    string message = 4;
+    optional ErrorProto error = 5;
+}
+
+message DateRangeProto {
+    string field = 1;
+    google.protobuf.Timestamp start = 2;
+    google.protobuf.Timestamp end = 3;
+}
+
+message FilteringProto {
+    string order_by = 1;
+    OrderTypeProto order_type = 2;
+    optional string search = 3;
+    optional string search_by = 4;
+    optional DateRangeProto date_range = 5;
+}
+
+message PaginationProto {
+    int32 per_page = 1;
+    int32 page = 2;
+    int32 total = 3;
+}
+
+message MetadataProto {
+    PaginationProto pagination = 1;
+    FilteringProto filtering = 2;
+}
+
+message ParameterRequestProto {
+    int32 per_page = 1;
+    int32 page = 2;
+    string order_by = 3;
+    OrderTypeProto order_type = 4;
+    string search = 5;
+    string keyword = 6;
+    string search_by = 7;
+    optional DateRangeProto date_range = 8;
+}
+
+enum OrderTypeProto {
+    ORDER_TYPE_NONE = 0;
+    ORDER_TYPE_ASC = 1;
+    ORDER_TYPE_DESC = 2;
+}
+
+message TimestampProto  {
+    google.protobuf.Timestamp created_at = 1;
+    google.protobuf.Timestamp updated_at = 2;
+    optional google.protobuf.Timestamp deleted_at = 3;
 }

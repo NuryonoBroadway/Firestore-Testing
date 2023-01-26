@@ -1,20 +1,20 @@
 package callgrpc
 
 import (
-	"firebaseapi/collectionx"
+	collectionxserver "firebaseapi/collectionx/collectionx_server"
 	"net"
 
 	logger "github.com/sirupsen/logrus"
 )
 
-func CallGrpc(cfg *collectionx.Config) {
-	collx := collectionx.NewCollectionCore_SourceDocument(cfg)
-	srv := collectionx.NewServer(collx)
+func CallGrpc(cfg *collectionxserver.ServerConfig) {
+	collx := collectionxserver.NewCollectionCore_SourceDocument(cfg)
+	srv := collectionxserver.NewServer(collx)
 	defer srv.GracefulStop()
 
-	logger.Infof("starting privypass-collection-core-se grpc services... %v", cfg.GrpcAddress)
+	logger.Infof("starting privypass-collection-core-se grpc services... 0.0.0.0:9090")
 
-	listen, err := net.Listen("tcp", cfg.GrpcAddress)
+	listen, err := net.Listen("tcp", "0.0.0.0:9090")
 	if err != nil {
 		logger.Warnf("cannot listen grpc port, err: %v", err.Error())
 	}

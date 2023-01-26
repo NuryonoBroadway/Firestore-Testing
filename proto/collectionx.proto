@@ -5,7 +5,7 @@ package collectionx;
 import "entity.proto";
 import "google/protobuf/struct.proto";
 
-option go_package = "protobuf/privy/v1/collectionx";
+option go_package = "protobuf/privy/v1/collectionxservice";
 
 /*
 =================
@@ -35,7 +35,7 @@ message PayloadProto {
     google.protobuf.Struct data = 2;
     repeated FilterProto filter = 3;
     int32 limit = 4;
-    repeated SortProto sort = 5;
+    SortProto sort = 5;
     bool is_delete = 6;
 	repeated PathProto path = 7;
 }

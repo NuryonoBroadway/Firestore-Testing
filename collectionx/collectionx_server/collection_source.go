@@ -1,8 +1,9 @@
-package collectionx
+package collectionxserver
 
 import (
 	"context"
 	"errors"
+	"firebaseapi/helper"
 	"strings"
 
 	"cloud.google.com/go/firestore"
@@ -20,21 +21,21 @@ type CollectionCore_SourceDocument interface {
 // Collection Core Source Implementation
 type collectionCore_SourceDocumentImplementation struct {
 	client *firestore.Client
-	config *Config
+	config *ServerConfig
 }
 
-func NewCollectionCore_SourceDocument(config *Config) *collectionCore_SourceDocumentImplementation {
-	client := registryFirestoreClient(*config)
+func NewCollectionCore_SourceDocument(config *ServerConfig) *collectionCore_SourceDocumentImplementation {
+	client := RegistryFirestoreClient(config)
 	return &collectionCore_SourceDocumentImplementation{client, config}
 }
 
 // Helper
-func (sd *collectionCore_SourceDocumentImplementation) RootCollection() *firestore.CollectionRef {
-	return sd.client.Collection(sd.config.ExternalCollection)
+func (sd *collectionCore_SourceDocumentImplementation) RootCollection(p *Payload) *firestore.CollectionRef {
+	return sd.client.Collection(p.RootCollection)
 }
 
-func (sd *collectionCore_SourceDocumentImplementation) RootDocument(root *firestore.CollectionRef) *firestore.DocumentRef {
-	return root.Doc(sd.config.ExternalDocument)
+func (sd *collectionCore_SourceDocumentImplementation) RootDocument(p *Payload) *firestore.DocumentRef {
+	return sd.RootCollection(p).Doc(p.Path[0].DocumentID)
 }
 
 func (sd *collectionCore_SourceDocumentImplementation) Builder(p *Payload) (*firestore.CollectionRef, *firestore.DocumentRef, bool) {
@@ -42,16 +43,10 @@ func (sd *collectionCore_SourceDocumentImplementation) Builder(p *Payload) (*fir
 		isLastDoc bool
 		docRef    *firestore.DocumentRef
 		colRef    *firestore.CollectionRef
-
-		// rootCollection = ""
 	)
 
-	// if p.RootCollection != "" {
-	// 	rootCollection = p.RootCollection
-	// }
-
-	colRef = sd.RootCollection()
-	docRef = sd.RootDocument(colRef)
+	colRef = sd.RootCollection(p)
+	docRef = sd.RootDocument(p)
 
 	// Path Builder
 	for i := 0; i < len(p.Path); i++ {
@@ -85,21 +80,24 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 
 	if isFindAll {
 		q := colRef.Query
-		for i := 0; i < len(p.sort); i++ {
+
+		if p.sort.Dir != "" {
 			var dir firestore.Direction
-			switch strings.ToLower(p.sort[i].Dir) {
-			case "asc":
+			switch strings.ToLower(p.sort.Dir) {
+			case helper.ASC:
 				dir = firestore.Asc
-			case "desc":
+			case helper.DESC:
 				dir = firestore.Desc
 			}
 
-			q = q.OrderBy(p.sort[i].By, dir)
+			q = q.OrderBy(p.sort.By, dir)
 		}
 
-		for i := 0; i < len(p.filter); i++ {
-			filter := p.filter[i]
-			q = q.Where(filter.By, filter.Op, filter.Val)
+		if len(p.filter) != 0 {
+			for i := 0; i < len(p.filter); i++ {
+				filter := p.filter[i]
+				q = q.Where(filter.By, filter.Op, filter.Val)
+			}
 		}
 
 		if p.limit > 0 {

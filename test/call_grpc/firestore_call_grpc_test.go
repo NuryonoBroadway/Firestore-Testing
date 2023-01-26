@@ -1,17 +1,15 @@
 package callgrpc
 
 import (
-	"firebaseapi/collectionx"
+	collectionxserver "firebaseapi/collectionx/collectionx_server"
 	"testing"
 )
 
 func Test_Call_Grpc(t *testing.T) {
-	config := collectionx.Config{
-		GrpcAddress:        "0.0.0.0:9090",
-		FirebasePath:       "/home/slvr/FirebaseTestingApi/config/privyfellowship-6a4e1-firebase-adminsdk-g0c2d-66e133ed37.json",
-		PubSubTopic:        "",
-		ExternalCollection: "development-privypass_collection-core-se",
-		ProjectID:          "privyfellowship-6a4e1",
+	config := collectionxserver.ServerConfig{
+		ProjectID:            "privyfellowship-6a4e1",
+		CredentialsFile:      "/home/slvr/FirebaseTestingApi/config/privyfellowship-6a4e1-firebase-adminsdk-g0c2d-66e133ed37.json",
+		ProjectServiceConfig: collectionxserver.ProjectServiceConfig{},
 	}
 
 	CallGrpc(&config)

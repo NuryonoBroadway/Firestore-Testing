@@ -7,7 +7,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-func Test_Get_All_Documents_GRPC(t *testing.T) {
+func Test_Get_Documents_With_Limit_GRPC(t *testing.T) {
 	cfg, err := collectionxclient.NewClientConfig(
 		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
 		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
@@ -33,11 +33,10 @@ func Test_Get_All_Documents_GRPC(t *testing.T) {
 		query = conn.Col("root-collection-test").Doc("default").Col("cities")
 		// query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
 	)
-
-	res, err := query.Retrive()
+	limit := 1
+	res, err := query.Limit(limit).Retrive()
 	if err != nil {
 		t.Error(err)
 	}
 	spew.Dump(res.MapValue())
-
 }

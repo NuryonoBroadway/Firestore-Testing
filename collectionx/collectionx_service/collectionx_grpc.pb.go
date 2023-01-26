@@ -4,7 +4,7 @@
 // - protoc             v3.15.8
 // source: collectionx.proto
 
-package collectionx
+package collectionxservice
 
 import (
 	context "context"

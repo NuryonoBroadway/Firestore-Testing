@@ -18,8 +18,8 @@ const (
 )
 
 const (
-	ASC  = "ASC"
-	DESC = "DESC"
+	ASC  = "asc"
+	DESC = "desc"
 )
 
 const (

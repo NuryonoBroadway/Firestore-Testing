@@ -1,34 +1,36 @@
 package callgrpc
 
 import (
-	"firebaseapi/collectionx"
+	collectionxclient "firebaseapi/collectionx/collectionx_client"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 )
 
 func Test_Find_One_Documents_GRPC(t *testing.T) {
-	config := collectionx.Config{
-		GrpcAddress:        "0.0.0.0:9090",
-		FirebasePath:       "/home/slvr/FirebaseTestingApi/config/privyfellowship-6a4e1-firebase-adminsdk-g0c2d-66e133ed37.json",
-		PubSubTopic:        "",
-		ExternalCollection: "development-privypass_collection-core-se",
-		ExternalDocument:   "default",
-		ProjectID:          "privyfellowship-6a4e1",
-	}
-
-	var (
-		collection_core_client = collectionx.NewClient(&config)
+	cfg, err := collectionxclient.NewClientConfig(
+		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
+		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
+		collectionxclient.WithProjectRootDocuments("default"),
+		collectionxclient.WithPubSubTopic("pubsub"),
 	)
-	conn, err := collection_core_client.OpenConnection()
 	if err != nil {
 		t.Error(err)
 	}
 
+	var (
+		collection_core_client = collectionxclient.NewCollectionClient(cfg)
+	)
+
+	conn, err := collection_core_client.OpenConnection()
+	if err != nil {
+		t.Error(err)
+	}
 	defer conn.Close()
+	
 	var (
 		// main_col = collectionx.NewCollectionPayloads(collectionx.WithRootCollection(config.ExternalCollection))
-		query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
+		query = conn.Col("root-collection-test").Doc("default").Col("cities")
 	)
 
 	testCases := []struct {

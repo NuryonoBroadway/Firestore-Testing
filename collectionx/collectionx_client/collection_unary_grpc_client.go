@@ -1,8 +1,9 @@
-package collectionx
+package collectionxclient
 
 import (
 	"context"
 	"encoding/json"
+	collectionxservice "firebaseapi/collectionx/collectionx_service"
 	"firebaseapi/helper"
 	"fmt"
 	reflect "reflect"
@@ -18,14 +19,14 @@ type Client interface {
 }
 
 type client struct {
-	cfg    *Config
+	cfg    *configClient
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
-	Collector
+	Documenter
 }
 
-func NewClient(cfg *Config) Client {
+func NewCollectionClient(cfg *configClient) Client {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &client{cfg: cfg, ctx: ctx, cancel: cancel}
 }
@@ -47,7 +48,12 @@ func (c *client) OpenConnection() (*client, error) {
 	}
 
 	c.conn = conn
-	c.Collector = NewCollectionPayloads(WithRootCollection(c.cfg.ExternalCollection), WithGRPCCon(conn), WithContext(c.ctx))
+	c.Documenter = NewCollectionPayloads(
+		WithRootCollection(string(c.cfg.ProjectRootCollection)),
+		WithRootDocuments(c.cfg.ProjectRootDocument),
+		WithGRPCCon(conn),
+		WithContext(c.ctx),
+	)
 
 	return c, nil
 }
@@ -62,18 +68,18 @@ func (p *Payload) Retrive() (*StandardAPI, error) {
 		return nil, fmt.Errorf("failed build collection core request data: %w", err)
 	}
 
-	pathProto := make([]*PathProto, len(p.Path))
+	pathProto := make([]*collectionxservice.PathProto, len(p.Path))
 	for i := 0; i < len(p.Path); i++ {
-		pathProto[i] = &PathProto{
+		pathProto[i] = &collectionxservice.PathProto{
 			CollectionId: p.Path[i].CollectionID,
 			DocumentId:   p.Path[i].DocumentID,
 			NewDocument:  p.Path[i].NewDocument,
 		}
 	}
 
-	filters := make([]*FilterProto, len(p.filter))
+	filters := make([]*collectionxservice.FilterProto, len(p.filter))
 	for i := 0; i < len(p.filter); i++ {
-		filters[i] = &FilterProto{
+		filters[i] = &collectionxservice.FilterProto{
 			By: p.filter[i].By,
 			Op: p.filter[i].Op,
 		}
@@ -81,30 +87,27 @@ func (p *Payload) Retrive() (*StandardAPI, error) {
 		xtyp := reflect.TypeOf(p.filter[i].Val)
 		switch xtyp.Kind() {
 		case reflect.Bool:
-			filters[i].Val = &FilterProto_ValBool{
+			filters[i].Val = &collectionxservice.FilterProto_ValBool{
 				ValBool: p.filter[i].Val.(bool),
 			}
 		case reflect.String:
-			filters[i].Val = &FilterProto_ValString{
+			filters[i].Val = &collectionxservice.FilterProto_ValString{
 				ValString: p.filter[i].Val.(string),
 			}
 		case reflect.Int64:
-			filters[i].Val = &FilterProto_ValInt{
+			filters[i].Val = &collectionxservice.FilterProto_ValInt{
 				ValInt: p.filter[i].Val.(int64),
 			}
 
 		}
 	}
 
-	sorts := make([]*SortProto, len(p.sort))
-	for i := 0; i < len(p.sort); i++ {
-		sorts[i] = &SortProto{
-			By:  p.sort[i].By,
-			Dir: p.sort[i].Dir,
-		}
+	sorts := &collectionxservice.SortProto{
+		By:  p.sort.By,
+		Dir: p.sort.Dir,
 	}
 
-	payloadProto := PayloadProto{
+	payloadProto := collectionxservice.PayloadProto{
 		RootCollection: p.RootCollection,
 		Filter:         filters,
 		Limit:          p.limit,
@@ -114,11 +117,11 @@ func (p *Payload) Retrive() (*StandardAPI, error) {
 		Path:           pathProto,
 	}
 
-	req := &RetriveRequest{
+	req := &collectionxservice.RetriveRequest{
 		Payload: &payloadProto,
 	}
 
-	res, err := NewServiceCollectionClient(p.conn).Retrive(p.ctx, req)
+	res, err := collectionxservice.NewServiceCollectionClient(p.conn).Retrive(p.ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed retrive collection core: %w", err)
 	}
