@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package collectionx;
+
+option go_package = "protobuf/privy/v1/collectionx";
+
+message StandardAPIProto {
+    string status = 1;
+    string entity = 2;
+    string state = 3;
+    string message = 4;
+    ErrorProto error = 5;
+}
+
+
+message ErrorProto {
+    string general = 1;
+    repeated ValidationErrorProto validation = 2;
+}
+
+message ValidationErrorProto {
+    string key = 1;
+    string value = 2;
+}

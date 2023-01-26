@@ -22,6 +22,11 @@ const (
 	DESC = "DESC"
 )
 
+const (
+	Collection = "collection"
+	Document   = "document"
+)
+
 func Compare(x interface{}, y interface{}) (int, int) {
 	var xint int = 0
 	var yint int = 0

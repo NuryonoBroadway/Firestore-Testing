@@ -107,20 +107,16 @@ func Test_Firestore_List_Ref_ID_With_Filter(t *testing.T) {
 						pass = queryIterator.Data()[i] != v.Value
 
 					case helper.GreaterThan:
-						x, y := helper.Compare(queryIterator.Data()[i], v.Value)
-						pass = x > y
+						pass = int(queryIterator.Data()[i].(int64)) > v.Value.(int)
 
 					case helper.GreaterThanEqual:
-						x, y := helper.Compare(queryIterator.Data()[i], v.Value)
-						pass = x >= y
+						pass = int(queryIterator.Data()[i].(int64)) >= v.Value.(int)
 
 					case helper.LessThan:
-						x, y := helper.Compare(queryIterator.Data()[i], v.Value)
-						pass = x < y
+						pass = int(queryIterator.Data()[i].(int64)) < v.Value.(int)
 
 					case helper.LessThanEqual:
-						x, y := helper.Compare(queryIterator.Data()[i], v.Value)
-						pass = x <= y
+						pass = int(queryIterator.Data()[i].(int64)) <= v.Value.(int)
 
 					case helper.In:
 						pass = helper.SliceCheckCondition(v.Value, queryIterator.Data()[i])

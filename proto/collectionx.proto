@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package collectionx;
+
+import "entity.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "protobuf/privy/v1/collectionx";
+
+/*
+=================
+    Entity
+=================
+*/
+
+// TODO : Add filtering support for firestore
+message FilterProto {
+    string by = 1;
+    string op = 2;
+    oneof val {
+        bool val_bool = 3;
+        string val_string = 4;
+        int64 val_int = 5;
+    };
+}
+
+// TODO : Add Sorting Support
+message SortProto {
+    string by = 1;
+    string dir = 2;
+}
+
+message PayloadProto {
+	string root_collection = 1;
+    google.protobuf.Struct data = 2;
+    repeated FilterProto filter = 3;
+    int32 limit = 4;
+    repeated SortProto sort = 5;
+    bool is_delete = 6;
+	repeated PathProto path = 7;
+}
+
+message PathProto {
+	string collection_id = 1;
+	string document_id = 2;
+	bool new_document = 3;
+}
+
+/*
+=================
+    Response
+=================
+*/
+
+message RetriveResponse {
+    StandardAPIProto api = 1;
+    bytes data = 2;
+}
+
+/*
+=================
+    Request
+=================
+*/
+
+message RetriveRequest {
+    PayloadProto payload = 1;
+}
+
+service ServiceCollection {
+    rpc Retrive(RetriveRequest) returns (RetriveResponse);
+}
