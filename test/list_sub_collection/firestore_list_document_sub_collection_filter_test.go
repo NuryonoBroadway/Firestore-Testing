@@ -33,7 +33,7 @@ func Test_Firestore_List_Ref_ID_With_Filter(t *testing.T) {
 	)
 
 	type filter struct {
-		Operator string
+		Operator helper.Operator
 		Value    interface{}
 	}
 

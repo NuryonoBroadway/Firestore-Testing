@@ -1,4 +1,4 @@
-package callgrpc
+package collectioncallgrpc
 
 import (
 	collectionxserver "firebaseapi/collectionx/collectionx_server"

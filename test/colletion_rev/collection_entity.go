@@ -1,5 +1,7 @@
 package collectionrev
 
+import "firebaseapi/helper"
+
 type Path struct {
 	CollectionID string `json:"collection_id,omitempty"`
 	DocumentID   string `json:"document_id,omitempty"`
@@ -12,7 +14,7 @@ type Sort struct {
 }
 
 type Filter struct {
-	By  string      `json:"by"`
-	Op  string      `json:"op"`
-	Val interface{} `json:"val"`
+	By  string          `json:"by"`
+	Op  helper.Operator `json:"op"`
+	Val interface{}     `json:"val"`
 }

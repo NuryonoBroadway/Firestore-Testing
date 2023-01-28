@@ -9,6 +9,7 @@ package collectionxservice
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -20,6 +21,165 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type OrderTypeProto int32
+
+const (
+	OrderTypeProto_ORDER_TYPE_NONE OrderTypeProto = 0
+	OrderTypeProto_ORDER_TYPE_ASC  OrderTypeProto = 1
+	OrderTypeProto_ORDER_TYPE_DESC OrderTypeProto = 2
+)
+
+// Enum value maps for OrderTypeProto.
+var (
+	OrderTypeProto_name = map[int32]string{
+		0: "ORDER_TYPE_NONE",
+		1: "ORDER_TYPE_ASC",
+		2: "ORDER_TYPE_DESC",
+	}
+	OrderTypeProto_value = map[string]int32{
+		"ORDER_TYPE_NONE": 0,
+		"ORDER_TYPE_ASC":  1,
+		"ORDER_TYPE_DESC": 2,
+	}
+)
+
+func (x OrderTypeProto) Enum() *OrderTypeProto {
+	p := new(OrderTypeProto)
+	*p = x
+	return p
+}
+
+func (x OrderTypeProto) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OrderTypeProto) Descriptor() protoreflect.EnumDescriptor {
+	return file_entity_proto_enumTypes[0].Descriptor()
+}
+
+func (OrderTypeProto) Type() protoreflect.EnumType {
+	return &file_entity_proto_enumTypes[0]
+}
+
+func (x OrderTypeProto) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OrderTypeProto.Descriptor instead.
+func (OrderTypeProto) EnumDescriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{0}
+}
+
+type ErrorProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	General    string                  `protobuf:"bytes,1,opt,name=general,proto3" json:"general,omitempty"`
+	Validation []*ValidationErrorProto `protobuf:"bytes,2,rep,name=validation,proto3" json:"validation,omitempty"`
+}
+
+func (x *ErrorProto) Reset() {
+	*x = ErrorProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ErrorProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ErrorProto) ProtoMessage() {}
+
+func (x *ErrorProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ErrorProto.ProtoReflect.Descriptor instead.
+func (*ErrorProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ErrorProto) GetGeneral() string {
+	if x != nil {
+		return x.General
+	}
+	return ""
+}
+
+func (x *ErrorProto) GetValidation() []*ValidationErrorProto {
+	if x != nil {
+		return x.Validation
+	}
+	return nil
+}
+
+type ValidationErrorProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (x *ValidationErrorProto) Reset() {
+	*x = ValidationErrorProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ValidationErrorProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidationErrorProto) ProtoMessage() {}
+
+func (x *ValidationErrorProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidationErrorProto.ProtoReflect.Descriptor instead.
+func (*ValidationErrorProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ValidationErrorProto) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *ValidationErrorProto) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
 type StandardAPIProto struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -29,13 +189,14 @@ type StandardAPIProto struct {
 	Entity  string      `protobuf:"bytes,2,opt,name=entity,proto3" json:"entity,omitempty"`
 	State   string      `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
 	Message string      `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
-	Error   *ErrorProto `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
+	Meta    *MetaProto  `protobuf:"bytes,5,opt,name=meta,proto3,oneof" json:"meta,omitempty"`
+	Error   *ErrorProto `protobuf:"bytes,6,opt,name=error,proto3,oneof" json:"error,omitempty"`
 }
 
 func (x *StandardAPIProto) Reset() {
 	*x = StandardAPIProto{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_entity_proto_msgTypes[0]
+		mi := &file_entity_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -48,7 +209,7 @@ func (x *StandardAPIProto) String() string {
 func (*StandardAPIProto) ProtoMessage() {}
 
 func (x *StandardAPIProto) ProtoReflect() protoreflect.Message {
-	mi := &file_entity_proto_msgTypes[0]
+	mi := &file_entity_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +222,7 @@ func (x *StandardAPIProto) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StandardAPIProto.ProtoReflect.Descriptor instead.
 func (*StandardAPIProto) Descriptor() ([]byte, []int) {
-	return file_entity_proto_rawDescGZIP(), []int{0}
+	return file_entity_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *StandardAPIProto) GetStatus() string {
@@ -92,6 +253,13 @@ func (x *StandardAPIProto) GetMessage() string {
 	return ""
 }
 
+func (x *StandardAPIProto) GetMeta() *MetaProto {
+	if x != nil {
+		return x.Meta
+	}
+	return nil
+}
+
 func (x *StandardAPIProto) GetError() *ErrorProto {
 	if x != nil {
 		return x.Error
@@ -99,32 +267,33 @@ func (x *StandardAPIProto) GetError() *ErrorProto {
 	return nil
 }
 
-type ErrorProto struct {
+type DateRangeProto struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	General    string                  `protobuf:"bytes,1,opt,name=general,proto3" json:"general,omitempty"`
-	Validation []*ValidationErrorProto `protobuf:"bytes,2,rep,name=validation,proto3" json:"validation,omitempty"`
+	Field string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	Start *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start,proto3" json:"start,omitempty"`
+	End   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
 }
 
-func (x *ErrorProto) Reset() {
-	*x = ErrorProto{}
+func (x *DateRangeProto) Reset() {
+	*x = DateRangeProto{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_entity_proto_msgTypes[1]
+		mi := &file_entity_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *ErrorProto) String() string {
+func (x *DateRangeProto) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ErrorProto) ProtoMessage() {}
+func (*DateRangeProto) ProtoMessage() {}
 
-func (x *ErrorProto) ProtoReflect() protoreflect.Message {
-	mi := &file_entity_proto_msgTypes[1]
+func (x *DateRangeProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,51 +304,64 @@ func (x *ErrorProto) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ErrorProto.ProtoReflect.Descriptor instead.
-func (*ErrorProto) Descriptor() ([]byte, []int) {
-	return file_entity_proto_rawDescGZIP(), []int{1}
+// Deprecated: Use DateRangeProto.ProtoReflect.Descriptor instead.
+func (*DateRangeProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ErrorProto) GetGeneral() string {
+func (x *DateRangeProto) GetField() string {
 	if x != nil {
-		return x.General
+		return x.Field
 	}
 	return ""
 }
 
-func (x *ErrorProto) GetValidation() []*ValidationErrorProto {
+func (x *DateRangeProto) GetStart() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Validation
+		return x.Start
 	}
 	return nil
 }
 
-type ValidationErrorProto struct {
+func (x *DateRangeProto) GetEnd() *timestamppb.Timestamp {
+	if x != nil {
+		return x.End
+	}
+	return nil
+}
+
+type FilterProto struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	By string `protobuf:"bytes,1,opt,name=by,proto3" json:"by,omitempty"`
+	Op string `protobuf:"bytes,2,opt,name=op,proto3" json:"op,omitempty"`
+	// Types that are assignable to Val:
+	//
+	//	*FilterProto_ValBool
+	//	*FilterProto_ValString
+	//	*FilterProto_ValInt
+	Val isFilterProto_Val `protobuf_oneof:"val"`
 }
 
-func (x *ValidationErrorProto) Reset() {
-	*x = ValidationErrorProto{}
+func (x *FilterProto) Reset() {
+	*x = FilterProto{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_entity_proto_msgTypes[2]
+		mi := &file_entity_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *ValidationErrorProto) String() string {
+func (x *FilterProto) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ValidationErrorProto) ProtoMessage() {}
+func (*FilterProto) ProtoMessage() {}
 
-func (x *ValidationErrorProto) ProtoReflect() protoreflect.Message {
-	mi := &file_entity_proto_msgTypes[2]
+func (x *FilterProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -190,54 +372,730 @@ func (x *ValidationErrorProto) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ValidationErrorProto.ProtoReflect.Descriptor instead.
-func (*ValidationErrorProto) Descriptor() ([]byte, []int) {
-	return file_entity_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use FilterProto.ProtoReflect.Descriptor instead.
+func (*FilterProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ValidationErrorProto) GetKey() string {
+func (x *FilterProto) GetBy() string {
 	if x != nil {
-		return x.Key
+		return x.By
 	}
 	return ""
 }
 
-func (x *ValidationErrorProto) GetValue() string {
+func (x *FilterProto) GetOp() string {
 	if x != nil {
-		return x.Value
+		return x.Op
 	}
 	return ""
+}
+
+func (m *FilterProto) GetVal() isFilterProto_Val {
+	if m != nil {
+		return m.Val
+	}
+	return nil
+}
+
+func (x *FilterProto) GetValBool() bool {
+	if x, ok := x.GetVal().(*FilterProto_ValBool); ok {
+		return x.ValBool
+	}
+	return false
+}
+
+func (x *FilterProto) GetValString() string {
+	if x, ok := x.GetVal().(*FilterProto_ValString); ok {
+		return x.ValString
+	}
+	return ""
+}
+
+func (x *FilterProto) GetValInt() int64 {
+	if x, ok := x.GetVal().(*FilterProto_ValInt); ok {
+		return x.ValInt
+	}
+	return 0
+}
+
+type isFilterProto_Val interface {
+	isFilterProto_Val()
+}
+
+type FilterProto_ValBool struct {
+	ValBool bool `protobuf:"varint,3,opt,name=val_bool,json=valBool,proto3,oneof"`
+}
+
+type FilterProto_ValString struct {
+	ValString string `protobuf:"bytes,4,opt,name=val_string,json=valString,proto3,oneof"`
+}
+
+type FilterProto_ValInt struct {
+	ValInt int64 `protobuf:"varint,5,opt,name=val_int,json=valInt,proto3,oneof"`
+}
+
+func (*FilterProto_ValBool) isFilterProto_Val() {}
+
+func (*FilterProto_ValString) isFilterProto_Val() {}
+
+func (*FilterProto_ValInt) isFilterProto_Val() {}
+
+type SortProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	OrderBy   string         `protobuf:"bytes,1,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	OrderType OrderTypeProto `protobuf:"varint,2,opt,name=order_type,json=orderType,proto3,enum=collectionx.OrderTypeProto" json:"order_type,omitempty"`
+}
+
+func (x *SortProto) Reset() {
+	*x = SortProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SortProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SortProto) ProtoMessage() {}
+
+func (x *SortProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SortProto.ProtoReflect.Descriptor instead.
+func (*SortProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SortProto) GetOrderBy() string {
+	if x != nil {
+		return x.OrderBy
+	}
+	return ""
+}
+
+func (x *SortProto) GetOrderType() OrderTypeProto {
+	if x != nil {
+		return x.OrderType
+	}
+	return OrderTypeProto_ORDER_TYPE_NONE
+}
+
+type FilteringProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Sort      *SortProto      `protobuf:"bytes,1,opt,name=sort,proto3,oneof" json:"sort,omitempty"`
+	Filter    []*FilterProto  `protobuf:"bytes,2,rep,name=filter,proto3" json:"filter,omitempty"`
+	DateRange *DateRangeProto `protobuf:"bytes,3,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
+}
+
+func (x *FilteringProto) Reset() {
+	*x = FilteringProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FilteringProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FilteringProto) ProtoMessage() {}
+
+func (x *FilteringProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FilteringProto.ProtoReflect.Descriptor instead.
+func (*FilteringProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *FilteringProto) GetSort() *SortProto {
+	if x != nil {
+		return x.Sort
+	}
+	return nil
+}
+
+func (x *FilteringProto) GetFilter() []*FilterProto {
+	if x != nil {
+		return x.Filter
+	}
+	return nil
+}
+
+func (x *FilteringProto) GetDateRange() *DateRangeProto {
+	if x != nil {
+		return x.DateRange
+	}
+	return nil
+}
+
+type PaginationProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Page int32     `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	Meta *MetaData `protobuf:"bytes,2,opt,name=meta,proto3" json:"meta,omitempty"`
+}
+
+func (x *PaginationProto) Reset() {
+	*x = PaginationProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PaginationProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaginationProto) ProtoMessage() {}
+
+func (x *PaginationProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaginationProto.ProtoReflect.Descriptor instead.
+func (*PaginationProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PaginationProto) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *PaginationProto) GetMeta() *MetaData {
+	if x != nil {
+		return x.Meta
+	}
+	return nil
+}
+
+type MetaData struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Page int32  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	Docs []byte `protobuf:"bytes,2,opt,name=docs,proto3" json:"docs,omitempty"`
+}
+
+func (x *MetaData) Reset() {
+	*x = MetaData{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MetaData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetaData) ProtoMessage() {}
+
+func (x *MetaData) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetaData.ProtoReflect.Descriptor instead.
+func (*MetaData) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MetaData) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *MetaData) GetDocs() []byte {
+	if x != nil {
+		return x.Docs
+	}
+	return nil
+}
+
+type MetaProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Page      int32  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PerPage   int32  `protobuf:"varint,2,opt,name=per_page,json=perPage,proto3" json:"per_page,omitempty"`
+	OrderBy   string `protobuf:"bytes,3,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	OrderType string `protobuf:"bytes,4,opt,name=order_type,json=orderType,proto3" json:"order_type,omitempty"`
+}
+
+func (x *MetaProto) Reset() {
+	*x = MetaProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MetaProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetaProto) ProtoMessage() {}
+
+func (x *MetaProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetaProto.ProtoReflect.Descriptor instead.
+func (*MetaProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MetaProto) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *MetaProto) GetPerPage() int32 {
+	if x != nil {
+		return x.PerPage
+	}
+	return 0
+}
+
+func (x *MetaProto) GetOrderBy() string {
+	if x != nil {
+		return x.OrderBy
+	}
+	return ""
+}
+
+func (x *MetaProto) GetOrderType() string {
+	if x != nil {
+		return x.OrderType
+	}
+	return ""
+}
+
+type MetadataProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Pagination *PaginationProto `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	Filtering  *FilteringProto  `protobuf:"bytes,2,opt,name=filtering,proto3" json:"filtering,omitempty"`
+}
+
+func (x *MetadataProto) Reset() {
+	*x = MetadataProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MetadataProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetadataProto) ProtoMessage() {}
+
+func (x *MetadataProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetadataProto.ProtoReflect.Descriptor instead.
+func (*MetadataProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MetadataProto) GetPagination() *PaginationProto {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+func (x *MetadataProto) GetFiltering() *FilteringProto {
+	if x != nil {
+		return x.Filtering
+	}
+	return nil
+}
+
+type ParameterRequestProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PerPage   int32           `protobuf:"varint,1,opt,name=per_page,json=perPage,proto3" json:"per_page,omitempty"`
+	Page      int32           `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	OrderBy   string          `protobuf:"bytes,3,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	OrderType OrderTypeProto  `protobuf:"varint,4,opt,name=order_type,json=orderType,proto3,enum=collectionx.OrderTypeProto" json:"order_type,omitempty"`
+	Search    string          `protobuf:"bytes,5,opt,name=search,proto3" json:"search,omitempty"`
+	Keyword   string          `protobuf:"bytes,6,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	SearchBy  string          `protobuf:"bytes,7,opt,name=search_by,json=searchBy,proto3" json:"search_by,omitempty"`
+	DateRange *DateRangeProto `protobuf:"bytes,8,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
+}
+
+func (x *ParameterRequestProto) Reset() {
+	*x = ParameterRequestProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ParameterRequestProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ParameterRequestProto) ProtoMessage() {}
+
+func (x *ParameterRequestProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ParameterRequestProto.ProtoReflect.Descriptor instead.
+func (*ParameterRequestProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ParameterRequestProto) GetPerPage() int32 {
+	if x != nil {
+		return x.PerPage
+	}
+	return 0
+}
+
+func (x *ParameterRequestProto) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ParameterRequestProto) GetOrderBy() string {
+	if x != nil {
+		return x.OrderBy
+	}
+	return ""
+}
+
+func (x *ParameterRequestProto) GetOrderType() OrderTypeProto {
+	if x != nil {
+		return x.OrderType
+	}
+	return OrderTypeProto_ORDER_TYPE_NONE
+}
+
+func (x *ParameterRequestProto) GetSearch() string {
+	if x != nil {
+		return x.Search
+	}
+	return ""
+}
+
+func (x *ParameterRequestProto) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *ParameterRequestProto) GetSearchBy() string {
+	if x != nil {
+		return x.SearchBy
+	}
+	return ""
+}
+
+func (x *ParameterRequestProto) GetDateRange() *DateRangeProto {
+	if x != nil {
+		return x.DateRange
+	}
+	return nil
+}
+
+type TimestampProto struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	DeletedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=deleted_at,json=deletedAt,proto3,oneof" json:"deleted_at,omitempty"`
+}
+
+func (x *TimestampProto) Reset() {
+	*x = TimestampProto{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_entity_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TimestampProto) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TimestampProto) ProtoMessage() {}
+
+func (x *TimestampProto) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TimestampProto.ProtoReflect.Descriptor instead.
+func (*TimestampProto) Descriptor() ([]byte, []int) {
+	return file_entity_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *TimestampProto) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *TimestampProto) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *TimestampProto) GetDeletedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DeletedAt
+	}
+	return nil
 }
 
 var File_entity_proto protoreflect.FileDescriptor
 
 var file_entity_proto_rawDesc = []byte{
 	0x0a, 0x0c, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0b,
-	0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x22, 0xa1, 0x01, 0x0a, 0x10,
-	0x53, 0x74, 0x61, 0x6e, 0x64, 0x61, 0x72, 0x64, 0x41, 0x50, 0x49, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69,
-	0x74, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
-	0x12, 0x14, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67,
-	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x12, 0x2d, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x17, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x45, 0x72,
-	0x72, 0x6f, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22,
-	0x69, 0x0a, 0x0a, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x18, 0x0a,
-	0x07, 0x67, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
-	0x67, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x6c, 0x12, 0x41, 0x0a, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x63, 0x6f,
-	0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x52, 0x0a,
-	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x3e, 0x0a, 0x14, 0x56, 0x61,
-	0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x42, 0x26, 0x5a, 0x24, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x79, 0x2f, 0x76, 0x31, 0x2f,
-	0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x1a, 0x1f, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d,
+	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x69, 0x0a, 0x0a,
+	0x45, 0x72, 0x72, 0x6f, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x18, 0x0a, 0x07, 0x67, 0x65,
+	0x6e, 0x65, 0x72, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x67, 0x65, 0x6e,
+	0x65, 0x72, 0x61, 0x6c, 0x12, 0x41, 0x0a, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x52, 0x0a, 0x76, 0x61, 0x6c,
+	0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x3e, 0x0a, 0x14, 0x56, 0x61, 0x6c, 0x69, 0x64,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12,
+	0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65,
+	0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0xea, 0x01, 0x0a, 0x10, 0x53, 0x74, 0x61, 0x6e,
+	0x64, 0x61, 0x72, 0x64, 0x41, 0x50, 0x49, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x16, 0x0a, 0x06,
+	0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x74,
+	0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05,
+	0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x73, 0x74, 0x61,
+	0x74, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x04,
+	0x6d, 0x65, 0x74, 0x61, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x63, 0x6f, 0x6c,
+	0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x48, 0x00, 0x52, 0x04, 0x6d, 0x65, 0x74, 0x61, 0x88, 0x01, 0x01, 0x12, 0x32, 0x0a,
+	0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x63,
+	0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72,
+	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x48, 0x01, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x88, 0x01,
+	0x01, 0x42, 0x07, 0x0a, 0x05, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x42, 0x08, 0x0a, 0x06, 0x5f, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x22, 0x86, 0x01, 0x0a, 0x0e, 0x44, 0x61, 0x74, 0x65, 0x52, 0x61, 0x6e,
+	0x67, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x14, 0x0a, 0x05, 0x66, 0x69, 0x65, 0x6c, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x12, 0x30, 0x0a,
+	0x05, 0x73, 0x74, 0x61, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54,
+	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x05, 0x73, 0x74, 0x61, 0x72, 0x74, 0x12,
+	0x2c, 0x0a, 0x03, 0x65, 0x6e, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54,
+	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x03, 0x65, 0x6e, 0x64, 0x22, 0x8d, 0x01,
+	0x0a, 0x0b, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0e, 0x0a,
+	0x02, 0x62, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x62, 0x79, 0x12, 0x0e, 0x0a,
+	0x02, 0x6f, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x6f, 0x70, 0x12, 0x1b, 0x0a,
+	0x08, 0x76, 0x61, 0x6c, 0x5f, 0x62, 0x6f, 0x6f, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x48,
+	0x00, 0x52, 0x07, 0x76, 0x61, 0x6c, 0x42, 0x6f, 0x6f, 0x6c, 0x12, 0x1f, 0x0a, 0x0a, 0x76, 0x61,
+	0x6c, 0x5f, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00,
+	0x52, 0x09, 0x76, 0x61, 0x6c, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x12, 0x19, 0x0a, 0x07, 0x76,
+	0x61, 0x6c, 0x5f, 0x69, 0x6e, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x48, 0x00, 0x52, 0x06,
+	0x76, 0x61, 0x6c, 0x49, 0x6e, 0x74, 0x42, 0x05, 0x0a, 0x03, 0x76, 0x61, 0x6c, 0x22, 0x62, 0x0a,
+	0x09, 0x53, 0x6f, 0x72, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x6f, 0x72,
+	0x64, 0x65, 0x72, 0x5f, 0x62, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6f, 0x72,
+	0x64, 0x65, 0x72, 0x42, 0x79, 0x12, 0x3a, 0x0a, 0x0a, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x74,
+	0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b, 0x2e, 0x63, 0x6f, 0x6c, 0x6c,
+	0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x54, 0x79, 0x70,
+	0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x52, 0x09, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x54, 0x79, 0x70,
+	0x65, 0x22, 0xcc, 0x01, 0x0a, 0x0e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x69, 0x6e, 0x67, 0x50,
+	0x72, 0x6f, 0x74, 0x6f, 0x12, 0x2f, 0x0a, 0x04, 0x73, 0x6f, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x16, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78,
+	0x2e, 0x53, 0x6f, 0x72, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x48, 0x00, 0x52, 0x04, 0x73, 0x6f,
+	0x72, 0x74, 0x88, 0x01, 0x01, 0x12, 0x30, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18,
+	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x78, 0x2e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x52,
+	0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x3f, 0x0a, 0x0a, 0x64, 0x61, 0x74, 0x65, 0x5f,
+	0x72, 0x61, 0x6e, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x63, 0x6f,
+	0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x44, 0x61, 0x74, 0x65, 0x52, 0x61,
+	0x6e, 0x67, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x48, 0x01, 0x52, 0x09, 0x64, 0x61, 0x74, 0x65,
+	0x52, 0x61, 0x6e, 0x67, 0x65, 0x88, 0x01, 0x01, 0x42, 0x07, 0x0a, 0x05, 0x5f, 0x73, 0x6f, 0x72,
+	0x74, 0x42, 0x0d, 0x0a, 0x0b, 0x5f, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x72, 0x61, 0x6e, 0x67, 0x65,
+	0x22, 0x50, 0x0a, 0x0f, 0x50, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72,
+	0x6f, 0x74, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x05, 0x52, 0x04, 0x70, 0x61, 0x67, 0x65, 0x12, 0x29, 0x0a, 0x04, 0x6d, 0x65, 0x74, 0x61, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x78, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x44, 0x61, 0x74, 0x61, 0x52, 0x04, 0x6d, 0x65,
+	0x74, 0x61, 0x22, 0x32, 0x0a, 0x08, 0x4d, 0x65, 0x74, 0x61, 0x44, 0x61, 0x74, 0x61, 0x12, 0x12,
+	0x0a, 0x04, 0x70, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x70, 0x61,
+	0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x6f, 0x63, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x04, 0x64, 0x6f, 0x63, 0x73, 0x22, 0x74, 0x0a, 0x09, 0x4d, 0x65, 0x74, 0x61, 0x50, 0x72,
+	0x6f, 0x74, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x05, 0x52, 0x04, 0x70, 0x61, 0x67, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x70, 0x65, 0x72, 0x5f, 0x70,
+	0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x70, 0x65, 0x72, 0x50, 0x61,
+	0x67, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x62, 0x79, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x42, 0x79, 0x12, 0x1d, 0x0a,
+	0x0a, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x09, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x22, 0x88, 0x01, 0x0a,
+	0x0d, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x3c,
+	0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78,
+	0x2e, 0x50, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x39, 0x0a, 0x09,
+	0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x69, 0x6e, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1b, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x46, 0x69,
+	0x6c, 0x74, 0x65, 0x72, 0x69, 0x6e, 0x67, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x52, 0x09, 0x66, 0x69,
+	0x6c, 0x74, 0x65, 0x72, 0x69, 0x6e, 0x67, 0x22, 0xbc, 0x02, 0x0a, 0x15, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x65, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x72, 0x6f, 0x74,
+	0x6f, 0x12, 0x19, 0x0a, 0x08, 0x70, 0x65, 0x72, 0x5f, 0x70, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x05, 0x52, 0x07, 0x70, 0x65, 0x72, 0x50, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04,
+	0x70, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x70, 0x61, 0x67, 0x65,
+	0x12, 0x19, 0x0a, 0x08, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x62, 0x79, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x07, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x42, 0x79, 0x12, 0x3a, 0x0a, 0x0a, 0x6f,
+	0x72, 0x64, 0x65, 0x72, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32,
+	0x1b, 0x2e, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x4f, 0x72,
+	0x64, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x52, 0x09, 0x6f, 0x72,
+	0x64, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x61, 0x72, 0x63,
+	0x68, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x61, 0x72, 0x63, 0x68, 0x12,
+	0x18, 0x0a, 0x07, 0x6b, 0x65, 0x79, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x6b, 0x65, 0x79, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x73, 0x65, 0x61,
+	0x72, 0x63, 0x68, 0x5f, 0x62, 0x79, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x73, 0x65,
+	0x61, 0x72, 0x63, 0x68, 0x42, 0x79, 0x12, 0x3f, 0x0a, 0x0a, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x72,
+	0x61, 0x6e, 0x67, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x63, 0x6f, 0x6c,
+	0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x2e, 0x44, 0x61, 0x74, 0x65, 0x52, 0x61, 0x6e,
+	0x67, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x48, 0x00, 0x52, 0x09, 0x64, 0x61, 0x74, 0x65, 0x52,
+	0x61, 0x6e, 0x67, 0x65, 0x88, 0x01, 0x01, 0x42, 0x0d, 0x0a, 0x0b, 0x5f, 0x64, 0x61, 0x74, 0x65,
+	0x5f, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x22, 0xd5, 0x01, 0x0a, 0x0e, 0x54, 0x69, 0x6d, 0x65, 0x73,
+	0x74, 0x61, 0x6d, 0x70, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x39, 0x0a, 0x0a, 0x63, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74,
+	0x65, 0x64, 0x41, 0x74, 0x12, 0x39, 0x0a, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x5f,
+	0x61, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73,
+	0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12,
+	0x3e, 0x0a, 0x0a, 0x64, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x48,
+	0x00, 0x52, 0x09, 0x64, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x64, 0x41, 0x74, 0x88, 0x01, 0x01, 0x42,
+	0x0d, 0x0a, 0x0b, 0x5f, 0x64, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x2a, 0x4e,
+	0x0a, 0x0e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x12, 0x13, 0x0a, 0x0f, 0x4f, 0x52, 0x44, 0x45, 0x52, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x4e,
+	0x4f, 0x4e, 0x45, 0x10, 0x00, 0x12, 0x12, 0x0a, 0x0e, 0x4f, 0x52, 0x44, 0x45, 0x52, 0x5f, 0x54,
+	0x59, 0x50, 0x45, 0x5f, 0x41, 0x53, 0x43, 0x10, 0x01, 0x12, 0x13, 0x0a, 0x0f, 0x4f, 0x52, 0x44,
+	0x45, 0x52, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x44, 0x45, 0x53, 0x43, 0x10, 0x02, 0x42, 0x26,
+	0x5a, 0x24, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x79,
+	0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x78, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -252,20 +1110,48 @@ func file_entity_proto_rawDescGZIP() []byte {
 	return file_entity_proto_rawDescData
 }
 
-var file_entity_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_entity_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_entity_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_entity_proto_goTypes = []interface{}{
-	(*StandardAPIProto)(nil),     // 0: collectionx.StandardAPIProto
-	(*ErrorProto)(nil),           // 1: collectionx.ErrorProto
-	(*ValidationErrorProto)(nil), // 2: collectionx.ValidationErrorProto
+	(OrderTypeProto)(0),           // 0: collectionx.OrderTypeProto
+	(*ErrorProto)(nil),            // 1: collectionx.ErrorProto
+	(*ValidationErrorProto)(nil),  // 2: collectionx.ValidationErrorProto
+	(*StandardAPIProto)(nil),      // 3: collectionx.StandardAPIProto
+	(*DateRangeProto)(nil),        // 4: collectionx.DateRangeProto
+	(*FilterProto)(nil),           // 5: collectionx.FilterProto
+	(*SortProto)(nil),             // 6: collectionx.SortProto
+	(*FilteringProto)(nil),        // 7: collectionx.FilteringProto
+	(*PaginationProto)(nil),       // 8: collectionx.PaginationProto
+	(*MetaData)(nil),              // 9: collectionx.MetaData
+	(*MetaProto)(nil),             // 10: collectionx.MetaProto
+	(*MetadataProto)(nil),         // 11: collectionx.MetadataProto
+	(*ParameterRequestProto)(nil), // 12: collectionx.ParameterRequestProto
+	(*TimestampProto)(nil),        // 13: collectionx.TimestampProto
+	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
 }
 var file_entity_proto_depIdxs = []int32{
-	1, // 0: collectionx.StandardAPIProto.error:type_name -> collectionx.ErrorProto
-	2, // 1: collectionx.ErrorProto.validation:type_name -> collectionx.ValidationErrorProto
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2,  // 0: collectionx.ErrorProto.validation:type_name -> collectionx.ValidationErrorProto
+	10, // 1: collectionx.StandardAPIProto.meta:type_name -> collectionx.MetaProto
+	1,  // 2: collectionx.StandardAPIProto.error:type_name -> collectionx.ErrorProto
+	14, // 3: collectionx.DateRangeProto.start:type_name -> google.protobuf.Timestamp
+	14, // 4: collectionx.DateRangeProto.end:type_name -> google.protobuf.Timestamp
+	0,  // 5: collectionx.SortProto.order_type:type_name -> collectionx.OrderTypeProto
+	6,  // 6: collectionx.FilteringProto.sort:type_name -> collectionx.SortProto
+	5,  // 7: collectionx.FilteringProto.filter:type_name -> collectionx.FilterProto
+	4,  // 8: collectionx.FilteringProto.date_range:type_name -> collectionx.DateRangeProto
+	9,  // 9: collectionx.PaginationProto.meta:type_name -> collectionx.MetaData
+	8,  // 10: collectionx.MetadataProto.pagination:type_name -> collectionx.PaginationProto
+	7,  // 11: collectionx.MetadataProto.filtering:type_name -> collectionx.FilteringProto
+	0,  // 12: collectionx.ParameterRequestProto.order_type:type_name -> collectionx.OrderTypeProto
+	4,  // 13: collectionx.ParameterRequestProto.date_range:type_name -> collectionx.DateRangeProto
+	14, // 14: collectionx.TimestampProto.created_at:type_name -> google.protobuf.Timestamp
+	14, // 15: collectionx.TimestampProto.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 16: collectionx.TimestampProto.deleted_at:type_name -> google.protobuf.Timestamp
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_entity_proto_init() }
@@ -275,18 +1161,6 @@ func file_entity_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_entity_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StandardAPIProto); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_entity_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ErrorProto); i {
 			case 0:
 				return &v.state
@@ -298,7 +1172,7 @@ func file_entity_proto_init() {
 				return nil
 			}
 		}
-		file_entity_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_entity_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ValidationErrorProto); i {
 			case 0:
 				return &v.state
@@ -310,19 +1184,161 @@ func file_entity_proto_init() {
 				return nil
 			}
 		}
+		file_entity_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StandardAPIProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DateRangeProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FilterProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SortProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FilteringProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PaginationProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MetaData); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MetaProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MetadataProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ParameterRequestProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_entity_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TimestampProto); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
+	file_entity_proto_msgTypes[2].OneofWrappers = []interface{}{}
+	file_entity_proto_msgTypes[4].OneofWrappers = []interface{}{
+		(*FilterProto_ValBool)(nil),
+		(*FilterProto_ValString)(nil),
+		(*FilterProto_ValInt)(nil),
+	}
+	file_entity_proto_msgTypes[6].OneofWrappers = []interface{}{}
+	file_entity_proto_msgTypes[11].OneofWrappers = []interface{}{}
+	file_entity_proto_msgTypes[12].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_entity_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   3,
+			NumEnums:      1,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_entity_proto_goTypes,
 		DependencyIndexes: file_entity_proto_depIdxs,
+		EnumInfos:         file_entity_proto_enumTypes,
 		MessageInfos:      file_entity_proto_msgTypes,
 	}.Build()
 	File_entity_proto = out.File

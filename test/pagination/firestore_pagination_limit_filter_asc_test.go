@@ -32,7 +32,7 @@ func Test_Firestore_Pagination_With_Filter_Limit_ASC(t *testing.T) {
 
 	// pagination test with cursor goes in here
 	type filter struct {
-		Operator string
+		Operator helper.Operator
 		Value    interface{}
 	}
 
@@ -60,7 +60,7 @@ func Test_Firestore_Pagination_With_Filter_Limit_ASC(t *testing.T) {
 				// iteration is empty or can iterate the multiple filters
 				// index by is important to use in case using > < condition
 				for k, v := range filter {
-					collect = collect.Where(k, v.Operator, v.Value)
+					collect = collect.Where(k, v.Operator.ToString(), v.Value)
 				}
 
 				iter := collect.OrderBy("population", firestore.Asc).Limit(limit).Documents(ctx)
@@ -94,7 +94,7 @@ func Test_Firestore_Pagination_With_Filter_Limit_ASC(t *testing.T) {
 				// iteration is empty or can iterate the multiple filters
 				// index by is important to use in case using > < condition
 				for k, v := range filter {
-					collect = collect.Where(k, v.Operator, v.Value)
+					collect = collect.Where(k, v.Operator.ToString(), v.Value)
 				}
 
 				iter := collect.OrderBy("population", firestore.Asc).StartAfter(lastCity.Data()["population"]).Limit(limit).Documents(ctx)
@@ -128,7 +128,7 @@ func Test_Firestore_Pagination_With_Filter_Limit_ASC(t *testing.T) {
 				// iteration is empty or can iterate the multiple filters
 				// index by is important to use in case using > < condition
 				for k, v := range filter {
-					collect = collect.Where(k, v.Operator, v.Value)
+					collect = collect.Where(k, v.Operator.ToString(), v.Value)
 				}
 
 				iter := collect.OrderBy("population", firestore.Desc).StartAfter(lastCity.Data()["population"]).Limit(limit).Documents(ctx)

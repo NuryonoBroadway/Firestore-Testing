@@ -3,6 +3,7 @@ package createfirestore
 import (
 	"firebaseapi/helper"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/option"
@@ -14,11 +15,11 @@ func Test_Firestore_Seed_Data(t *testing.T) {
 			id string
 			c  helper.City
 		}{
-			{id: "SF", c: helper.City{Name: "San Francisco", State: "CA", Country: "USA", Capital: false, Population: 860000}},
-			{id: "LA", c: helper.City{Name: "Los Angeles", State: "CA", Country: "USA", Capital: false, Population: 3900000}},
-			{id: "DC", c: helper.City{Name: "Washington D.C.", Country: "USA", Capital: true, Population: 680000}},
-			{id: "TOK", c: helper.City{Name: "Tokyo", Country: "Japan", Capital: true, Population: 9000000}},
-			{id: "BJ", c: helper.City{Name: "Beijing", Country: "China", Capital: true, Population: 21500000}},
+			{id: "SF", c: helper.City{Name: "San Francisco", State: "CA", Country: "USA", Capital: false, Population: 860000, CreatedAt: time.Now(), UpdatedAt: time.Now()}},
+			{id: "LA", c: helper.City{Name: "Los Angeles", State: "CA", Country: "USA", Capital: false, Population: 3900000, CreatedAt: time.Now().AddDate(1, 0, 0), UpdatedAt: time.Now().AddDate(1, 0, 0)}},
+			{id: "DC", c: helper.City{Name: "Washington D.C.", Country: "USA", Capital: true, Population: 680000, CreatedAt: time.Now().AddDate(2, 0, 0), UpdatedAt: time.Now().AddDate(2, 0, 0)}},
+			{id: "TOK", c: helper.City{Name: "Tokyo", Country: "Japan", Capital: true, Population: 9000000, CreatedAt: time.Now().AddDate(3, 0, 0), UpdatedAt: time.Now().AddDate(3, 0, 0)}},
+			{id: "BJ", c: helper.City{Name: "Beijing", Country: "China", Capital: true, Population: 21500000, CreatedAt: time.Now().AddDate(4, 0, 0), UpdatedAt: time.Now().AddDate(4, 0, 0)}},
 		}
 	)
 

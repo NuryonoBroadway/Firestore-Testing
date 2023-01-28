@@ -49,8 +49,9 @@ func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveR
 	}
 
 	var (
-		paths   = make([]Path, len(req.Payload.Path))
-		filters = make([]Filter, len(req.Payload.Filter))
+		paths      = make([]Path, len(req.Payload.Path))
+		query      = Filtering{}
+		pagination = Pagination{}
 	)
 
 	for i := 0; i < len(req.Payload.Path); i++ {
@@ -59,36 +60,59 @@ func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveR
 		paths[i].NewDocument = req.Payload.Path[i].NewDocument
 	}
 
-	sorts := Sort{
-		By:  req.Payload.Sort.By,
-		Dir: req.Payload.Sort.Dir,
+	query.Sort = Sort_Query{
+		OrderBy:   req.Payload.Query.Sort.OrderBy,
+		OrderType: OrderDir(req.Payload.Query.Sort.OrderType.Number()),
 	}
 
-	for i := 0; i < len(req.Payload.Filter); i++ {
-		filters[i] = Filter{
-			By: req.Payload.Filter[i].By,
-			Op: req.Payload.Filter[i].Op,
+	query.DateRange = DateRange_Query{
+		Field: req.Payload.Query.DateRange.Field,
+		Start: req.GetPayload().Query.DateRange.Start.AsTime(),
+		End:   req.GetPayload().Query.DateRange.End.AsTime(),
+	}
+
+	filters := make([]Filter_Query, len(req.Payload.Query.Filter))
+	for i := 0; i < len(req.Payload.Query.Filter); i++ {
+		filters[i] = Filter_Query{
+			By: req.Payload.Query.Filter[i].By,
+			Op: req.Payload.Query.Filter[i].Op,
+		}
+		if req.Payload.Query.Filter[i].GetValString() != "" {
+			filters[i].Val = req.Payload.Query.Filter[i].GetValString()
+		} else if req.Payload.Query.Filter[i].GetValInt() < -1 {
+			filters[i].Val = req.Payload.Query.Filter[i].GetValInt()
+		} else {
+			filters[i].Val = req.Payload.Query.Filter[i].GetValBool()
+		}
+	}
+	query.Filter = filters
+
+	if req.Payload.Pagination.Meta != nil {
+		pagination = Pagination{
+			Page: req.Payload.Pagination.Page,
+			Meta: MetaData{
+				Page: req.Payload.Pagination.Meta.Page,
+			},
 		}
 
-		if req.Payload.Filter[i].GetValString() != "" {
-			filters[i].Val = req.Payload.Filter[i].GetValString()
-		} else if req.Payload.Filter[i].GetValInt() != 0 {
-			filters[i].Val = req.Payload.Filter[i].GetValInt()
-		} else {
-			filters[i].Val = req.Payload.Filter[i].GetValBool()
+		var page []map[string]interface{}
+		if err := json.Unmarshal(req.Payload.Pagination.Meta.Docs, &page); err != nil {
+			return nil, err
 		}
+		pagination.Meta.Docs = page
 	}
 
 	var (
 		res = collectionxservice.RetriveResponse{}
 		p   = Payload{
 			RootCollection: req.Payload.RootCollection,
-			filter:         filters,
+			RootDocument:   req.Payload.RootDocument,
 			limit:          req.Payload.Limit,
-			sort:           sorts,
 			IsDelete:       req.Payload.IsDelete,
 			Data:           req.Payload.Data.AsMap(),
 			Path:           paths,
+			pagination:     pagination,
+			query:          query,
 		}
 	)
 
@@ -125,6 +149,12 @@ func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveR
 		Entity:  "retriveFirestoreDocument",
 		State:   "retriveFirestoreDocumentSuccess",
 		Message: "Retrive Firestore Document Success",
+		Meta: &collectionxservice.MetaProto{
+			Page:      p.pagination.Page,
+			PerPage:   p.limit,
+			OrderBy:   p.query.Sort.OrderBy,
+			OrderType: p.query.Sort.OrderType.ToString(),
+		},
 	}
 	res.Data = data
 

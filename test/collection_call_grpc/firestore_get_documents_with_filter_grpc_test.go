@@ -1,13 +1,14 @@
-package callgrpc
+package collectioncallgrpc
 
 import (
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
+	"firebaseapi/helper"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 )
 
-func Test_Get_All_Documents_GRPC(t *testing.T) {
+func Test_Get_Documents_With_Filter_GRPC(t *testing.T) {
 	cfg, err := collectionxclient.NewClientConfig(
 		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
 		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
@@ -34,10 +35,26 @@ func Test_Get_All_Documents_GRPC(t *testing.T) {
 		// query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
 	)
 
+	filters := []Filter{
+		{
+			By:  "country",
+			Op:  helper.EqualTo,
+			Val: "USA",
+		},
+		{
+			By:  "capital",
+			Op:  helper.EqualTo,
+			Val: false,
+		},
+	}
+
+	for _, v := range filters {
+		query = query.Where(v.By, v.Op, v.Val)
+	}
+
 	res, err := query.Retrive()
 	if err != nil {
 		t.Error(err)
 	}
-	spew.Dump(res.MapValue())
-
+	spew.Dump(res)
 }

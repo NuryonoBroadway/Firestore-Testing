@@ -4,18 +4,24 @@ import (
 	"reflect"
 )
 
+type Operator string
+
 const (
-	GreaterThan      = ">"
-	LessThan         = "<"
-	GreaterThanEqual = ">="
-	LessThanEqual    = "<="
-	EqualTo          = "=="
-	NotEqualTo       = "!="
-	NotIn            = "not-in"
-	In               = "in"
-	ArrayContains    = "array-contains"
-	ArrayContainsAny = "array-contains-any"
+	GreaterThan      Operator = ">"
+	LessThan         Operator = "<"
+	GreaterThanEqual Operator = ">="
+	LessThanEqual    Operator = "<="
+	EqualTo          Operator = "=="
+	NotEqualTo       Operator = "!="
+	NotIn            Operator = "not-in"
+	In               Operator = "in"
+	ArrayContains    Operator = "array-contains"
+	ArrayContainsAny Operator = "array-contains-any"
 )
+
+func (o Operator) ToString() string {
+	return string(o)
+}
 
 const (
 	ASC  = "asc"

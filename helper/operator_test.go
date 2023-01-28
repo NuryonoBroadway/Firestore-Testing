@@ -9,7 +9,7 @@ import (
 
 func TestSliceCheckCondition(t *testing.T) {
 	type filter struct {
-		Operator string
+		Operator helper.Operator
 		Value    interface{}
 	}
 

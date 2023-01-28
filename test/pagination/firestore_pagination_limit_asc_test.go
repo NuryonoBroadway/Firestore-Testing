@@ -76,6 +76,26 @@ func Test_Firestore_Pagination_With_Limit_ASC(t *testing.T) {
 			},
 		},
 		{
+			name:      "Forward with 2 steps",
+			limit:     2,
+			behaviour: "forward",
+			excute: func(limit int) error {
+				lastCity := cities[len(cities)-1]
+				iter := query.OrderBy("population", firestore.Asc).StartAfter(lastCity.Data()["population"]).Limit(limit).Documents(ctx)
+				docs, err := iter.GetAll()
+				if err != nil {
+					return err
+				}
+
+				for _, v := range docs {
+					spew.Dump(v.Data())
+				}
+				cities = docs
+
+				return nil
+			},
+		},
+		{
 			name:      "Backward with 2 steps",
 			limit:     2,
 			behaviour: "back",
@@ -91,46 +111,6 @@ func Test_Firestore_Pagination_With_Limit_ASC(t *testing.T) {
 					spew.Dump(v.Data())
 				}
 
-				cities = docs
-
-				return nil
-			},
-		},
-		{
-			name:      "Forward with 2 steps",
-			limit:     2,
-			behaviour: "forward",
-			excute: func(limit int) error {
-				lastCity := cities[len(cities)-1]
-				iter := query.OrderBy("population", firestore.Asc).StartAfter(lastCity.Data()["population"]).Limit(limit).Documents(ctx)
-				docs, err := iter.GetAll()
-				if err != nil {
-					return err
-				}
-
-				for _, v := range docs {
-					spew.Dump(v.Data())
-				}
-				cities = docs
-
-				return nil
-			},
-		},
-		{
-			name:      "Forward with 2 steps",
-			limit:     2,
-			behaviour: "forward",
-			excute: func(limit int) error {
-				lastCity := cities[len(cities)-1]
-				iter := query.OrderBy("population", firestore.Asc).StartAfter(lastCity.Data()["population"]).Limit(limit).Documents(ctx)
-				docs, err := iter.GetAll()
-				if err != nil {
-					return err
-				}
-
-				for _, v := range docs {
-					spew.Dump(v.Data())
-				}
 				cities = docs
 
 				return nil

@@ -30,7 +30,7 @@ func Test_Firestore_Find_All_Documents_Multiple_Filter(t *testing.T) {
 	)
 
 	type filter struct {
-		Operator string
+		Operator helper.Operator
 		Value    interface{}
 	}
 
@@ -59,7 +59,7 @@ func Test_Firestore_Find_All_Documents_Multiple_Filter(t *testing.T) {
 
 				// iteration is empty or can iterate the multiple filters
 				for k, v := range filter {
-					collect = collect.Where(k, v.Operator, v.Value)
+					collect = collect.Where(k, v.Operator.ToString(), v.Value)
 				}
 
 				return collect.Documents(ctx)
@@ -80,7 +80,7 @@ func Test_Firestore_Find_All_Documents_Multiple_Filter(t *testing.T) {
 
 				// iteration is empty or can iterate the multiple filters
 				for k, v := range filter {
-					collect = collect.Where(k, v.Operator, v.Value)
+					collect = collect.Where(k, v.Operator.ToString(), v.Value)
 				}
 
 				return collect.Documents(ctx)
@@ -106,7 +106,7 @@ func Test_Firestore_Find_All_Documents_Multiple_Filter(t *testing.T) {
 				// iteration is empty or can iterate the multiple filters
 				// index by is important to use in case using > < condition
 				for k, v := range filter {
-					collect = collect.Where(k, v.Operator, v.Value)
+					collect = collect.Where(k, v.Operator.ToString(), v.Value)
 				}
 
 				return collect.Documents(ctx)
@@ -128,7 +128,7 @@ func Test_Firestore_Find_All_Documents_Multiple_Filter(t *testing.T) {
 				// iteration is empty or can iterate the multiple filters
 				// index by is important to use in case using > < condition
 				for k, v := range filter {
-					collect = collect.Where(k, v.Operator, v.Value)
+					collect = collect.Where(k, v.Operator.ToString(), v.Value)
 				}
 
 				return collect.Documents(ctx)

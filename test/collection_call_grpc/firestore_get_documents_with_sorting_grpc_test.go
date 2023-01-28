@@ -1,8 +1,7 @@
-package callgrpc
+package collectioncallgrpc
 
 import (
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
-	"firebaseapi/helper"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -35,12 +34,12 @@ func Test_Get_Documents_With_Sort_GRPC(t *testing.T) {
 		// query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
 	)
 
-	sorts := collectionxclient.Sort{
+	sorts := Sort{
 		By:  "name",
-		Dir: helper.DESC,
+		Dir: collectionxclient.Asc,
 	}
 
-	res, err := query.Order(sorts).Retrive()
+	res, err := query.OrderBy(sorts.By, sorts.Dir).Retrive()
 	if err != nil {
 		t.Error(err)
 	}

@@ -14,30 +14,19 @@ option go_package = "protobuf/privy/v1/collectionxservice";
 */
 
 // TODO : Add filtering support for firestore
-message FilterProto {
-    string by = 1;
-    string op = 2;
-    oneof val {
-        bool val_bool = 3;
-        string val_string = 4;
-        int64 val_int = 5;
-    };
-}
+
 
 // TODO : Add Sorting Support
-message SortProto {
-    string by = 1;
-    string dir = 2;
-}
 
 message PayloadProto {
 	string root_collection = 1;
-    google.protobuf.Struct data = 2;
-    repeated FilterProto filter = 3;
+    string root_document = 2;
+    google.protobuf.Struct data = 3;
     int32 limit = 4;
-    SortProto sort = 5;
     bool is_delete = 6;
 	repeated PathProto path = 7;
+    FilteringProto query = 8;
+    PaginationProto pagination = 9;
 }
 
 message PathProto {

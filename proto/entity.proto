@@ -1,12 +1,11 @@
 syntax = "proto3";
 
-package app;
+package collectionx;
 
 import "google/protobuf/timestamp.proto";
 // import "google/protobuf/any.proto";
 
-option go_package = "protobuf/privy/v1/app";
-
+option go_package = "protobuf/privy/v1/collectionxservice";
 
 message ErrorProto {
     string general = 1;
@@ -23,7 +22,8 @@ message StandardAPIProto {
     string entity = 2;
     string state = 3;
     string message = 4;
-    optional ErrorProto error = 5;
+    optional MetaProto meta = 5;
+    optional ErrorProto error = 6;
 }
 
 message DateRangeProto {
@@ -32,18 +32,43 @@ message DateRangeProto {
     google.protobuf.Timestamp end = 3;
 }
 
-message FilteringProto {
+message FilterProto {
+    string by = 1;
+    string op = 2;
+    oneof val {
+        bool val_bool = 3;
+        string val_string = 4;
+        int64 val_int = 5;
+    };
+} 
+
+message SortProto {
     string order_by = 1;
     OrderTypeProto order_type = 2;
-    optional string search = 3;
-    optional string search_by = 4;
-    optional DateRangeProto date_range = 5;
+}
+
+
+message FilteringProto {
+    optional SortProto sort = 1;
+    repeated FilterProto filter = 2;
+    optional DateRangeProto date_range = 3;
 }
 
 message PaginationProto {
-    int32 per_page = 1;
-    int32 page = 2;
-    int32 total = 3;
+    int32 page = 1;
+    MetaData meta = 2;
+}
+
+message MetaData {
+    int32 page = 1;
+    bytes docs = 2;
+}
+
+message MetaProto {
+    int32 page = 1;
+    int32 per_page = 2;
+    string order_by = 3;
+    string order_type = 4;
 }
 
 message MetadataProto {

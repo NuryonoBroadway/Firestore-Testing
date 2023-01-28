@@ -1,13 +1,14 @@
-package callgrpc
+package collectioncallgrpc
 
 import (
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
 	"testing"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 )
 
-func Test_Find_One_Documents_GRPC(t *testing.T) {
+func Test_Get_Documents_With_DateRange_GRPC(t *testing.T) {
 	cfg, err := collectionxclient.NewClientConfig(
 		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
 		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
@@ -27,38 +28,16 @@ func Test_Find_One_Documents_GRPC(t *testing.T) {
 		t.Error(err)
 	}
 	defer conn.Close()
-	
+
 	var (
 		// main_col = collectionx.NewCollectionPayloads(collectionx.WithRootCollection(config.ExternalCollection))
 		query = conn.Col("root-collection-test").Doc("default").Col("cities")
+		// query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
 	)
 
-	testCases := []struct {
-		name  string
-		refId string
-	}{
-		{
-			name:  "Find Japan Tokyo",
-			refId: "TOK",
-		}, {
-			name:  "Find China Bejing",
-			refId: "BJ",
-		}, {
-			name:  "Find USA DC",
-			refId: "DC",
-		},
+	res, err := query.OrderBy("created_at", collectionxclient.Asc).DataRange("created_at", time.Now(), time.Now().AddDate(2, 0, 0)).Retrive()
+	if err != nil {
+		t.Error(err)
 	}
-
-	for i := range testCases {
-		tc := testCases[i]
-
-		t.Run(tc.name, func(t *testing.T) {
-			res, err := query.Doc(tc.refId).Retrive()
-			if err != nil {
-				t.Error(err)
-			}
-			spew.Dump(res.MapValue())
-		})
-
-	}
+	spew.Dump(res.MapValue())
 }

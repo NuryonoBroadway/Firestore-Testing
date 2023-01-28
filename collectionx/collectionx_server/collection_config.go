@@ -13,6 +13,8 @@ import (
 type ServerConfig struct {
 	ProjectID       string `json:"project_id"`
 	CredentialsFile string `json:"credentials_file"`
+	RootCollection  string `json:"root_collection"`
+	RootDocument    string `json:"root_document"`
 	ProjectServiceConfig
 }
 

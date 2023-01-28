@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"firebaseapi/helper"
-	"strings"
 
 	"cloud.google.com/go/firestore"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -31,11 +31,13 @@ func NewCollectionCore_SourceDocument(config *ServerConfig) *collectionCore_Sour
 
 // Helper
 func (sd *collectionCore_SourceDocumentImplementation) RootCollection(p *Payload) *firestore.CollectionRef {
-	return sd.client.Collection(p.RootCollection)
+	sd.config.RootCollection = p.RootCollection
+	return sd.client.Collection(sd.config.RootCollection)
 }
 
 func (sd *collectionCore_SourceDocumentImplementation) RootDocument(p *Payload) *firestore.DocumentRef {
-	return sd.RootCollection(p).Doc(p.Path[0].DocumentID)
+	sd.config.RootDocument = p.RootDocument
+	return sd.RootCollection(p).Doc(sd.config.RootDocument)
 }
 
 func (sd *collectionCore_SourceDocumentImplementation) Builder(p *Payload) (*firestore.CollectionRef, *firestore.DocumentRef, bool) {
@@ -78,33 +80,71 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 		isFindOne = isLastDoc
 	)
 
-	if isFindAll {
-		q := colRef.Query
+	// set default combination ordertype is asc and orderby is created_at, so if user want to use pagination
+	// they dont need to specify ordertype and orderby
+	// set the default getter to default orderby value
 
-		if p.sort.Dir != "" {
+	if isFindAll {
+		query := colRef.Query
+
+		if p.query.Sort.OrderBy != "" {
 			var dir firestore.Direction
-			switch strings.ToLower(p.sort.Dir) {
-			case helper.ASC:
+			switch p.query.Sort.OrderType {
+			case Asc:
 				dir = firestore.Asc
-			case helper.DESC:
+			case Desc:
 				dir = firestore.Desc
 			}
 
-			q = q.OrderBy(p.sort.By, dir)
+			query = query.OrderBy(p.query.Sort.OrderBy, dir)
 		}
 
-		if len(p.filter) != 0 {
-			for i := 0; i < len(p.filter); i++ {
-				filter := p.filter[i]
-				q = q.Where(filter.By, filter.Op, filter.Val)
+		for i := 0; i < len(p.query.Filter); i++ {
+			filter := p.query.Filter[i]
+			query = query.Where(filter.By, filter.Op, filter.Val)
+		}
+
+		if p.query.DateRange.Field != "" {
+			ranges := p.query.DateRange
+			if ranges.Field == p.query.Sort.OrderBy {
+				query = query.Where(
+					p.query.DateRange.Field,
+					helper.GreaterThanEqual.ToString(),
+					p.query.DateRange.Start,
+				).Where(
+					p.query.DateRange.Field,
+					helper.LessThanEqual.ToString(),
+					p.query.DateRange.End,
+				)
+			} else {
+				return nil, errors.New("use sort with the same field with daterange field")
 			}
 		}
 
-		if p.limit > 0 {
-			q = q.Limit(int(p.limit))
+		if len(p.pagination.Meta.Docs) != 0 {
+			// find last index
+			// if let say we gonna get the meta for the current page use have
+			current_page := p.pagination.Meta.Page
+			page := p.pagination.Page
+			if current_page == page {
+				logrus.Info("in same page")
+				query = query.StartAt(p.pagination.Meta.Docs[0][p.query.Sort.OrderBy]).Limit(int(p.limit))
+			} else if current_page > page {
+				logrus.Info("previous page")
+				query = query.EndAt(p.pagination.Meta.Docs[0][p.query.Sort.OrderBy]).LimitToLast(int(p.limit))
+			} else if current_page < page {
+				logrus.Info("next page")
+				data := p.pagination.Meta.Docs
+				query = query.StartAfter(data[len(data)-1][p.query.Sort.OrderBy]).Limit(int(p.limit))
+			}
+
+		} else {
+			if p.limit > 0 {
+				query = query.Limit(int(p.limit))
+			}
 		}
 
-		snaps, err := q.Documents(ctx).GetAll()
+		snaps, err := query.Documents(ctx).GetAll()
 		if err != nil {
 			return nil, err
 		}
