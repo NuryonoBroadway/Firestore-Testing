@@ -108,13 +108,13 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 			ranges := p.query.DateRange
 			if ranges.Field == p.query.Sort.OrderBy {
 				query = query.Where(
-					p.query.DateRange.Field,
+					ranges.Field,
 					helper.GreaterThanEqual.ToString(),
-					p.query.DateRange.Start,
+					ranges.Start,
 				).Where(
-					p.query.DateRange.Field,
+					ranges.Field,
 					helper.LessThanEqual.ToString(),
-					p.query.DateRange.End,
+					ranges.End,
 				)
 			} else {
 				return nil, errors.New("use sort with the same field with daterange field")
@@ -196,13 +196,13 @@ func (sd *collectionCore_SourceDocumentImplementation) Snapshots(ctx context.Con
 			ranges := p.query.DateRange
 			if ranges.Field == p.query.Sort.OrderBy {
 				query = query.Where(
-					p.query.DateRange.Field,
+					ranges.Field,
 					helper.GreaterThanEqual.ToString(),
-					p.query.DateRange.Start,
+					ranges.Start,
 				).Where(
-					p.query.DateRange.Field,
+					ranges.Field,
 					helper.LessThanEqual.ToString(),
-					p.query.DateRange.End,
+					ranges.End,
 				)
 			} else {
 				return nil, nil, errors.New("use sort with the same field with daterange field")

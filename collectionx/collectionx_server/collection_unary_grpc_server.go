@@ -169,7 +169,7 @@ func (srv *server) Snapshots(req *collectionxservice.SnapshotsRequest, stream co
 			Api: &collectionxservice.StandardAPIProto{
 				Status:  "ERROR",
 				Entity:  "snapshotsFirestore",
-				State:   "snapshotsirestoreError",
+				State:   "snapshotsFirestoreError",
 				Message: "Snapshots Firestore Failed Read Source Data",
 			},
 		})

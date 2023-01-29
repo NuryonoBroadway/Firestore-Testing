@@ -51,7 +51,7 @@ func (c *client) OpenConnection() (*client, error) {
 
 	c.conn = conn
 	c.Documenter = NewCollectionPayloads(
-		WithRootCollection(string(c.cfg.ProjectRootCollection)),
+		WithRootCollection(c.cfg.ProjectRootCollection),
 		WithRootDocuments(c.cfg.ProjectRootDocument),
 		WithGRPCCon(conn),
 		WithContext(c.ctx),
