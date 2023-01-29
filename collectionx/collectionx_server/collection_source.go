@@ -6,7 +6,6 @@ import (
 	"firebaseapi/helper"
 
 	"cloud.google.com/go/firestore"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -15,7 +14,8 @@ var (
 
 // Collection Core Source Contract
 type CollectionCore_SourceDocument interface {
-	Retrive(ctx context.Context, p *Payload) (data interface{}, err error)
+	Retrive(ctx context.Context, p *Payload) (data *DataResponse, err error)
+	Snapshots(ctx context.Context, p *Payload) (col *firestore.QuerySnapshotIterator, doc *firestore.DocumentSnapshotIterator, err error)
 }
 
 // Collection Core Source Implementation
@@ -71,7 +71,7 @@ func (sd *collectionCore_SourceDocumentImplementation) Builder(p *Payload) (*fir
 	return colRef, docRef, isLastDoc
 }
 
-func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Context, p *Payload) (data interface{}, err error) {
+func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Context, p *Payload) (data *DataResponse, err error) {
 	var (
 		colRef, docRef, isLastDoc = sd.Builder(p)
 		isLastCol                 = !isLastDoc
@@ -121,27 +121,15 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 			}
 		}
 
-		if len(p.pagination.Meta.Docs) != 0 {
-			// find last index
-			// if let say we gonna get the meta for the current page use have
-			current_page := p.pagination.Meta.Page
-			page := p.pagination.Page
-			if current_page == page {
-				logrus.Info("in same page")
-				query = query.StartAt(p.pagination.Meta.Docs[0][p.query.Sort.OrderBy]).Limit(int(p.limit))
-			} else if current_page > page {
-				logrus.Info("previous page")
-				query = query.EndAt(p.pagination.Meta.Docs[0][p.query.Sort.OrderBy]).LimitToLast(int(p.limit))
-			} else if current_page < page {
-				logrus.Info("next page")
-				data := p.pagination.Meta.Docs
-				query = query.StartAfter(data[len(data)-1][p.query.Sort.OrderBy]).Limit(int(p.limit))
-			}
+		if p.limit > 0 {
+			query = query.Limit(int(p.limit))
+		}
 
-		} else {
-			if p.limit > 0 {
-				query = query.Limit(int(p.limit))
-			}
+		// limitation on firestore cursor is we cannot specify the page number we want
+		if p.isPagination {
+			page := p.pagination.Page
+			offset := (page - 1) * p.limit
+			query = query.Offset(int(offset))
 		}
 
 		snaps, err := query.Documents(ctx).GetAll()
@@ -157,15 +145,85 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 			}
 		}
 
-		return docs, nil
+		return &DataResponse{
+			Total: len(snaps),
+			Data:  docs,
+		}, nil
 	} else if isFindOne {
 		snap, err := docRef.Get(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		return snap.Data(), nil
+		return &DataResponse{
+			Total: 1,
+			Data:  snap.Data(),
+		}, nil
 	}
 
 	return nil, ErrInvalidPath
+}
+
+func (sd *collectionCore_SourceDocumentImplementation) Snapshots(ctx context.Context, p *Payload) (col *firestore.QuerySnapshotIterator, doc *firestore.DocumentSnapshotIterator, err error) {
+	var (
+		colRef, docRef, isLastDoc = sd.Builder(p)
+		isLastCol                 = !isLastDoc
+
+		isFindAll = isLastCol
+		isFindOne = isLastDoc
+	)
+
+	if isFindAll {
+		query := colRef.Query
+		if p.query.Sort.OrderBy != "" {
+			var dir firestore.Direction
+			switch p.query.Sort.OrderType {
+			case Asc:
+				dir = firestore.Asc
+			case Desc:
+				dir = firestore.Desc
+			}
+
+			query = query.OrderBy(p.query.Sort.OrderBy, dir)
+		}
+
+		for i := 0; i < len(p.query.Filter); i++ {
+			filter := p.query.Filter[i]
+			query = query.Where(filter.By, filter.Op, filter.Val)
+		}
+
+		if p.query.DateRange.Field != "" {
+			ranges := p.query.DateRange
+			if ranges.Field == p.query.Sort.OrderBy {
+				query = query.Where(
+					p.query.DateRange.Field,
+					helper.GreaterThanEqual.ToString(),
+					p.query.DateRange.Start,
+				).Where(
+					p.query.DateRange.Field,
+					helper.LessThanEqual.ToString(),
+					p.query.DateRange.End,
+				)
+			} else {
+				return nil, nil, errors.New("use sort with the same field with daterange field")
+			}
+		}
+
+		if p.limit > 0 {
+			query = query.Limit(int(p.limit))
+		}
+
+		// limitation on firestore cursor is we cannot specify the page number we want
+		if p.isPagination {
+			page := p.pagination.Page
+			offset := (page - 1) * p.limit
+			query = query.Offset(int(offset))
+		}
+
+		return query.Snapshots(ctx), nil, nil
+	} else if isFindOne {
+		return nil, docRef.Snapshots(ctx), nil
+	}
+
+	return nil, nil, errors.New("not implemented")
 }

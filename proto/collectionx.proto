@@ -23,6 +23,7 @@ message PayloadProto {
     string root_document = 2;
     google.protobuf.Struct data = 3;
     int32 limit = 4;
+    bool is_pagination = 5;
     bool is_delete = 6;
 	repeated PathProto path = 7;
     FilteringProto query = 8;
@@ -46,6 +47,13 @@ message RetriveResponse {
     bytes data = 2;
 }
 
+message SnapshotsResponse {
+    StandardAPIProto api = 1;
+    DocumentChange document_change = 2;
+}
+
+
+
 /*
 =================
     Request
@@ -56,6 +64,11 @@ message RetriveRequest {
     PayloadProto payload = 1;
 }
 
+message SnapshotsRequest {
+    PayloadProto payload = 1;
+}
+
 service ServiceCollection {
     rpc Retrive(RetriveRequest) returns (RetriveResponse);
+    rpc Snapshots(SnapshotsRequest) returns (stream SnapshotsResponse);
 }

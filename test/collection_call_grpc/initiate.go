@@ -7,9 +7,10 @@ import (
 	"net"
 
 	logger "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
-func CallGrpc(cfg *collectionxserver.ServerConfig) {
+func CallGrpc(cfg *collectionxserver.ServerConfig) *grpc.Server {
 	collx := collectionxserver.NewCollectionCore_SourceDocument(cfg)
 	srv := collectionxserver.NewServer(collx)
 	defer srv.GracefulStop()
@@ -24,6 +25,8 @@ func CallGrpc(cfg *collectionxserver.ServerConfig) {
 	if err := srv.Serve(listen); err != nil {
 		logger.Fatalf("service  grpc stopped, err: %v", err.Error())
 	}
+
+	return srv
 }
 
 type Sort struct {

@@ -29,8 +29,8 @@ const (
 )
 
 const (
-	Collection = "collection"
-	Document   = "document"
+	Collection = "Collection"
+	Document   = "Document"
 )
 
 func Compare(x interface{}, y interface{}) (int, int) {

@@ -2,12 +2,13 @@ package collectioncallgrpc
 
 import (
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
+	"firebaseapi/helper"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 )
 
-func Test_Pagination_GRPC(t *testing.T) {
+func Test_Pagination_With_Filter_GRPC(t *testing.T) {
 	cfg, err := collectionxclient.NewClientConfig(
 		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
 		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
@@ -33,25 +34,41 @@ func Test_Pagination_GRPC(t *testing.T) {
 		query = conn.Col("root-collection-test").Doc("default").Col("cities")
 	)
 
-	// bug cannot select with flexibility
 	testCases := []struct {
-		name string
-		exec func(collectionxclient.Collector) collectionxclient.Collector
+		name   string
+		filter []Filter
+		exec   func(query collectionxclient.Collector, filter []Filter) collectionxclient.Collector
 	}{
 		{
-			name: "Forward 2 Docs To Page 1",
-			exec: func(query collectionxclient.Collector) collectionxclient.Collector {
+			name: "Forward 2 Docs",
+			filter: []Filter{
+				{
+					By:  "capital",
+					Op:  helper.EqualTo,
+					Val: false,
+				},
+			},
+			exec: func(query collectionxclient.Collector, filter []Filter) collectionxclient.Collector {
+				for _, v := range filter {
+					query = query.Where(v.By, v.Op, v.Val)
+				}
 				return query.Page(1).Limit(2).OrderBy("created_at", collectionxclient.Asc)
 			},
-		}, {
-			name: "Forward 2 Docs To Page 3",
-			exec: func(query collectionxclient.Collector) collectionxclient.Collector {
-				return query.Page(3).Limit(2).OrderBy("created_at", collectionxclient.Asc)
+		},
+		{
+			name: "Backward 2 Docs",
+			filter: []Filter{
+				{
+					By:  "capital",
+					Op:  helper.EqualTo,
+					Val: false,
+				},
 			},
-		}, {
-			name: "Backward 2 Docs To Page 2",
-			exec: func(query collectionxclient.Collector) collectionxclient.Collector {
-				return query.Page(2).Limit(2).OrderBy("created_at", collectionxclient.Asc)
+			exec: func(query collectionxclient.Collector, filter []Filter) collectionxclient.Collector {
+				for _, v := range filter {
+					query = query.Where(v.By, v.Op, v.Val)
+				}
+				return query.Page(1).Limit(2).OrderBy("created_at", collectionxclient.Asc)
 			},
 		},
 	}
@@ -60,12 +77,11 @@ func Test_Pagination_GRPC(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
-			q := tc.exec(query)
+			q := tc.exec(query, tc.filter)
 			res, err := q.Retrive()
 			if err != nil {
 				t.Error(err)
 			}
-
 			spew.Dump(res)
 		})
 

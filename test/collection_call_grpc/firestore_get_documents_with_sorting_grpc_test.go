@@ -43,5 +43,5 @@ func Test_Get_Documents_With_Sort_GRPC(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	spew.Dump(res.MapValue())
+	spew.Dump(res)
 }

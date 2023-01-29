@@ -56,19 +56,14 @@ message FilteringProto {
 
 message PaginationProto {
     int32 page = 1;
-    MetaData meta = 2;
-}
-
-message MetaData {
-    int32 page = 1;
-    bytes docs = 2;
 }
 
 message MetaProto {
     int32 page = 1;
     int32 per_page = 2;
-    string order_by = 3;
-    string order_type = 4;
+    int32 total = 3;
+    string order_by = 4;
+    string order_type = 5;
 }
 
 message MetadataProto {
@@ -94,7 +89,22 @@ enum OrderTypeProto {
 }
 
 message TimestampProto  {
-    google.protobuf.Timestamp created_at = 1;
-    google.protobuf.Timestamp updated_at = 2;
-    optional google.protobuf.Timestamp deleted_at = 3;
+    google.protobuf.Timestamp created_time = 1;
+    google.protobuf.Timestamp read_time = 2;
+    google.protobuf.Timestamp update_time = 3;
+}
+
+
+message DocumentChange {
+    DocumentChangeKind kind = 1;
+    bytes data = 2;
+    TimestampProto timestamp = 3;
+}
+
+
+enum DocumentChangeKind {
+    DOCUMENT_KIND_ADDED = 0;
+    DOCUMENT_KIND_REMOVED = 1;
+    DOCUMENT_KIND_MODIFIED = 2;
+    DOCUMENT_KIND_SNAPSHOTS = 3;
 }

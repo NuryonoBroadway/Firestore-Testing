@@ -12,6 +12,7 @@ import (
 // Document cant search by filter
 type Documenter interface {
 	Col(id string) Collector
+	Snapshots() (*CollectionxSnapshots, error)
 	Retrive() (*StandardAPI, error)
 }
 
@@ -23,7 +24,8 @@ type Collector interface {
 	Where(by string, op helper.Operator, val interface{}) *Payload
 	Limit(limit int) *Payload
 	DataRange(field string, start time.Time, end time.Time) *Payload
-	Pagination(page int32, meta MetaData) *Payload
+	Page(page int32) *Payload
+	Snapshots() (*CollectionxSnapshots, error)
 	Retrive() (*StandardAPI, error)
 }
 
@@ -46,26 +48,22 @@ type Payload struct {
 	Data map[string]interface{}
 	Path []Path
 
-	// pagination
+	// limitation
 	limit int32
 
+	// pagination
 	pagination Pagination
 
-	// TODO: metadata
+	// filtering
 	query Filtering
 
 	// condition
-	IsDelete bool
+	isPagination bool
+	isDelete     bool
 }
 
 type Pagination struct {
 	Page int32
-	Meta MetaData
-}
-
-type MetaData struct {
-	Page int32
-	Docs []map[string]interface{}
 }
 
 type Filtering struct {
@@ -135,38 +133,6 @@ func WithContext(ctx context.Context) func(p *Payload) {
 	}
 }
 
-type StandardAPI struct {
-	Status  string `json:"status,omitempty"`
-	Entity  string `json:"entity,omitempty"`
-	State   string `json:"state,omitempty"`
-	Message string `json:"message,omitempty"`
-	Meta    Meta   `json:"meta,omitempty"`
-	Data    Data   `json:"data,omitempty"`
-	Error   *Error `json:"error,omitempty"`
-}
-
-type Meta struct {
-	Page      int32 `json:"page"`
-	PerPage   int32 `json:"per_page"`
-	OrderBy   string
-	OrderType string
-}
-
-type Data struct {
-	Type string
-	Data interface{}
-}
-
-type Error struct {
-	General    string              `json:"general"`
-	Validation []map[string]string `json:"validation"`
-}
-
-type ListValue struct {
-	RefID  string                 `json:"ref_id"`
-	Object map[string]interface{} `json:"object"`
-}
-
 func (p *Payload) Col(id string) Collector {
 	p.Path = append(p.Path, Path{
 		CollectionID: id,
@@ -228,38 +194,54 @@ func (p *Payload) Where(by string, op helper.Operator, val interface{}) *Payload
 	return p
 }
 
-func (p *Payload) Pagination(page int32, meta MetaData) *Payload {
+func (p *Payload) Page(page int32) *Payload {
+	p.isPagination = true
 	p.pagination = Pagination{
 		Page: page,
 	}
-
-	if len(meta.Docs) == 0 {
-		p.pagination.Meta = MetaData{
-			Page: page,
-			Docs: make([]map[string]interface{}, 0),
-		}
-	} else {
-		p.pagination.Meta = meta
-	}
-
 	return p
 }
 
-func MetadataCreator(page int32, docs map[string]interface{}) MetaData {
-	m := MetaData{
-		Page: page,
-	}
+/*
+Standar API
+*/
 
-	for _, v := range docs {
-		m.Docs = append(m.Docs, v.(map[string]interface{}))
-	}
-
-	return m
+type StandardAPIDefault struct {
+	Status  string `json:"status,omitempty"`
+	Entity  string `json:"entity,omitempty"`
+	State   string `json:"state,omitempty"`
+	Message string `json:"message,omitempty"`
+	Error   *Error `json:"error,omitempty"`
 }
 
-/*
-Payload
-*/
+type StandardAPI struct {
+	StandardAPIDefault `json:"standard_api"`
+	Meta               Meta `json:"meta,omitempty"`
+	Data               Data `json:"data,omitempty"`
+}
+
+type Meta struct {
+	Page      int32 `json:"page"`
+	PerPage   int32 `json:"per_page"`
+	Total     int32 `json:"total"`
+	OrderBy   string
+	OrderType string
+}
+
+type Data struct {
+	Type string
+	Data interface{}
+}
+
+type Error struct {
+	General    string              `json:"general"`
+	Validation []map[string]string `json:"validation"`
+}
+
+type ListValue struct {
+	RefID  string                 `json:"ref_id"`
+	Object map[string]interface{} `json:"object"`
+}
 
 func (s *StandardAPI) MapValue() map[string]interface{} {
 	switch s.Data.Type {
@@ -279,4 +261,53 @@ func (s *StandardAPI) MapValue() map[string]interface{} {
 	}
 
 	return nil
+}
+
+/*
+Document Change
+*/
+
+type Snapshots struct {
+	StandardAPIDefault `json:"standard_api"`
+	Kind               string
+	Data               Data
+	Timestamp          Timestamp
+}
+
+type CollectionxSnapshots struct {
+	snapshots Snapshots
+
+	isCol bool
+	ws    collectionxservice.ServiceCollection_SnapshotsClient
+	err   error
+}
+
+type DocumentKind int32
+
+const (
+	DOCUMENT_KIND_ADDED     DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_ADDED)
+	DOCUMENT_KIND_REMOVED   DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_REMOVED)
+	DOCUMENT_KIND_MODIFIED  DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_MODIFIED)
+	DOCUMENT_KIND_SNAPSHOTS DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_SNAPSHOTS)
+)
+
+func (d DocumentKind) ToString() string {
+	switch d {
+	case DOCUMENT_KIND_ADDED:
+		return "Document Added"
+	case DOCUMENT_KIND_REMOVED:
+		return "Document Removed"
+	case DOCUMENT_KIND_MODIFIED:
+		return "Document Modified"
+	case DOCUMENT_KIND_SNAPSHOTS:
+		return "Document Snapshots"
+	default:
+		return "not-implemented"
+	}
+}
+
+type Timestamp struct {
+	CreatedTime time.Time `json:"created_time"`
+	ReadTime    time.Time `json:"read_time"`
+	UpdateTime  time.Time `json:"modified_time"`
 }

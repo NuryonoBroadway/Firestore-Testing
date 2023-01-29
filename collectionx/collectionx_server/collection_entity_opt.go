@@ -11,6 +11,11 @@ type Path struct {
 	NewDocument  bool   `json:"new_document,omitempty"`
 }
 
+type DataResponse struct {
+	Total int
+	Data  interface{}
+}
+
 type Payload struct {
 	Environment    string
 	ServiceName    string
@@ -28,17 +33,12 @@ type Payload struct {
 	query      Filtering
 
 	// condition
-	IsDelete bool
+	isPagination bool
+	isDelete     bool
 }
 
 type Pagination struct {
 	Page int32
-	Meta MetaData
-}
-
-type MetaData struct {
-	Page int32
-	Docs []map[string]interface{}
 }
 
 type Filtering struct {

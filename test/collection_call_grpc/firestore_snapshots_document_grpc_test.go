@@ -2,13 +2,14 @@ package collectioncallgrpc
 
 import (
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
+	"io"
 	"testing"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/sirupsen/logrus"
 )
 
-func Test_Get_Documents_With_DateRange_GRPC(t *testing.T) {
+func Test_Document_Snapshots_GRPC(t *testing.T) {
 	cfg, err := collectionxclient.NewClientConfig(
 		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
 		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
@@ -31,13 +32,30 @@ func Test_Get_Documents_With_DateRange_GRPC(t *testing.T) {
 
 	var (
 		// main_col = collectionx.NewCollectionPayloads(collectionx.WithRootCollection(config.ExternalCollection))
-		query = conn.Col("root-collection-test").Doc("default").Col("cities")
-		// query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
+		query = conn.Col("root-collection-test").Doc("default").Col("cities").Doc("JKT")
 	)
 
-	res, err := query.OrderBy("created_at", collectionxclient.Asc).DataRange("created_at", time.Now(), time.Now().AddDate(2, 0, 0)).Retrive()
+	snap, err := query.Snapshots()
 	if err != nil {
 		t.Error(err)
 	}
-	spew.Dump(res)
+
+	defer snap.Close()
+	for {
+		res, err := snap.Receive()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			t.Error(err)
+		}
+
+		switch res.Kind {
+		case collectionxclient.DOCUMENT_KIND_SNAPSHOTS.ToString():
+			logrus.Info("document snapshots")
+			spew.Dump(res)
+		}
+
+	}
 }

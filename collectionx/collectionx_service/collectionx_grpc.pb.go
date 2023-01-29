@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServiceCollectionClient interface {
 	Retrive(ctx context.Context, in *RetriveRequest, opts ...grpc.CallOption) (*RetriveResponse, error)
+	Snapshots(ctx context.Context, in *SnapshotsRequest, opts ...grpc.CallOption) (ServiceCollection_SnapshotsClient, error)
 }
 
 type serviceCollectionClient struct {
@@ -42,11 +43,44 @@ func (c *serviceCollectionClient) Retrive(ctx context.Context, in *RetriveReques
 	return out, nil
 }
 
+func (c *serviceCollectionClient) Snapshots(ctx context.Context, in *SnapshotsRequest, opts ...grpc.CallOption) (ServiceCollection_SnapshotsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ServiceCollection_ServiceDesc.Streams[0], "/collectionx.ServiceCollection/Snapshots", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &serviceCollectionSnapshotsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ServiceCollection_SnapshotsClient interface {
+	Recv() (*SnapshotsResponse, error)
+	grpc.ClientStream
+}
+
+type serviceCollectionSnapshotsClient struct {
+	grpc.ClientStream
+}
+
+func (x *serviceCollectionSnapshotsClient) Recv() (*SnapshotsResponse, error) {
+	m := new(SnapshotsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ServiceCollectionServer is the server API for ServiceCollection service.
 // All implementations must embed UnimplementedServiceCollectionServer
 // for forward compatibility
 type ServiceCollectionServer interface {
 	Retrive(context.Context, *RetriveRequest) (*RetriveResponse, error)
+	Snapshots(*SnapshotsRequest, ServiceCollection_SnapshotsServer) error
 	mustEmbedUnimplementedServiceCollectionServer()
 }
 
@@ -56,6 +90,9 @@ type UnimplementedServiceCollectionServer struct {
 
 func (UnimplementedServiceCollectionServer) Retrive(context.Context, *RetriveRequest) (*RetriveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Retrive not implemented")
+}
+func (UnimplementedServiceCollectionServer) Snapshots(*SnapshotsRequest, ServiceCollection_SnapshotsServer) error {
+	return status.Errorf(codes.Unimplemented, "method Snapshots not implemented")
 }
 func (UnimplementedServiceCollectionServer) mustEmbedUnimplementedServiceCollectionServer() {}
 
@@ -88,6 +125,27 @@ func _ServiceCollection_Retrive_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ServiceCollection_Snapshots_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SnapshotsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ServiceCollectionServer).Snapshots(m, &serviceCollectionSnapshotsServer{stream})
+}
+
+type ServiceCollection_SnapshotsServer interface {
+	Send(*SnapshotsResponse) error
+	grpc.ServerStream
+}
+
+type serviceCollectionSnapshotsServer struct {
+	grpc.ServerStream
+}
+
+func (x *serviceCollectionSnapshotsServer) Send(m *SnapshotsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // ServiceCollection_ServiceDesc is the grpc.ServiceDesc for ServiceCollection service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +158,12 @@ var ServiceCollection_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ServiceCollection_Retrive_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Snapshots",
+			Handler:       _ServiceCollection_Snapshots_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "collectionx.proto",
 }
