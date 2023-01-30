@@ -67,7 +67,7 @@ type Pagination struct {
 }
 
 type Filtering struct {
-	Sort      Sort_Query
+	Sort      []Sort_Query
 	Filter    []Filter_Query
 	DateRange DateRange_Query
 }
@@ -165,11 +165,12 @@ func (p *Payload) Limit(limit int) *Payload {
 }
 
 func (p *Payload) OrderBy(by string, dir OrderDir) *Payload {
-	p.query.Sort = Sort_Query{
+	sort := Sort_Query{
 		OrderBy:   by,
 		OrderType: dir,
 	}
 
+	p.query.Sort = append(p.query.Sort, sort)
 	return p
 }
 
@@ -221,11 +222,9 @@ type StandardAPI struct {
 }
 
 type Meta struct {
-	Page      int32 `json:"page"`
-	PerPage   int32 `json:"per_page"`
-	Total     int32 `json:"total"`
-	OrderBy   string
-	OrderType string
+	Page    int32 `json:"page"`
+	PerPage int32 `json:"per_page"`
+	Total   int32 `json:"total"`
 }
 
 type Data struct {

@@ -42,7 +42,7 @@ type Pagination struct {
 }
 
 type Filtering struct {
-	Sort      Sort_Query
+	Sort      []Sort_Query
 	Filter    []Filter_Query
 	DateRange DateRange_Query
 }

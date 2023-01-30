@@ -15,13 +15,6 @@ type ServerConfig struct {
 	CredentialsFile string `json:"credentials_file"`
 	RootCollection  string `json:"root_collection"`
 	RootDocument    string `json:"root_document"`
-	ProjectServiceConfig
-}
-
-type ProjectServiceConfig struct {
-	Environment string `json:"environment"`
-	ServiceName string `json:"service_name"`
-	ProjectName string `json:"project_name"`
 }
 
 func RegistryFirestoreClient(cfg *ServerConfig) *firestore.Client {
@@ -30,7 +23,7 @@ func RegistryFirestoreClient(cfg *ServerConfig) *firestore.Client {
 	conf := &firebase.Config{ProjectID: cfg.ProjectID}
 	app, err := firebase.NewApp(ctx, conf, credOpt)
 	if err != nil {
-		logger.Fatal(fmt.Sprintf("google firestore error:%v", err))
+		logger.Fatal(fmt.Sprintf("google firestore error:%v", err)) // removed
 	}
 
 	client, err := app.Firestore(ctx)

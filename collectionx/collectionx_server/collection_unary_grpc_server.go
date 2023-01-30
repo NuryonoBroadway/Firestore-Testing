@@ -41,6 +41,60 @@ func NewCollectionCoreServer(source CollectionCore_SourceDocument) *server {
 	}
 }
 
+func (srv *server) payloadBuilder(req *collectionxservice.PayloadProto) ([]Path, Filtering, Pagination) {
+	var (
+		paths      = make([]Path, len(req.Path))
+		query      = Filtering{}
+		pagination = Pagination{}
+	)
+
+	for i := 0; i < len(req.Path); i++ {
+		paths[i].CollectionID = req.Path[i].CollectionId
+		paths[i].DocumentID = req.Path[i].DocumentId
+		paths[i].NewDocument = req.Path[i].NewDocument
+	}
+
+	sorts := make([]Sort_Query, len(req.Query.Sort))
+	for i := 0; i < len(req.Query.Sort); i++ {
+		sorts[i] = Sort_Query{
+			OrderBy:   req.Query.Sort[i].OrderBy,
+			OrderType: OrderDir(req.Query.Sort[i].OrderType),
+		}
+	}
+
+	if req.Query.DateRange != nil {
+		query.DateRange = DateRange_Query{
+			Field: req.Query.DateRange.Field,
+			Start: req.Query.DateRange.Start.AsTime(),
+			End:   req.Query.DateRange.End.AsTime(),
+		}
+	}
+
+	filters := make([]Filter_Query, len(req.Query.Filter))
+	for i := 0; i < len(req.Query.Filter); i++ {
+		filters[i] = Filter_Query{
+			By: req.Query.Filter[i].By,
+			Op: req.Query.Filter[i].Op,
+		}
+		if req.Query.Filter[i].GetValString() != "" {
+			filters[i].Val = req.Query.Filter[i].GetValString()
+		} else if req.Query.Filter[i].GetValInt() < -1 {
+			filters[i].Val = req.Query.Filter[i].GetValInt()
+		} else {
+			filters[i].Val = req.Query.Filter[i].GetValBool()
+		}
+	}
+	query.Filter = filters
+
+	if req.IsPagination {
+		pagination = Pagination{
+			Page: req.Pagination.Page,
+		}
+	}
+
+	return paths, query, pagination
+}
+
 func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveRequest) (*collectionxservice.RetriveResponse, error) {
 	if req.Payload == nil {
 		return &collectionxservice.RetriveResponse{
@@ -53,55 +107,7 @@ func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveR
 		}, nil
 	}
 
-	var (
-		paths      = make([]Path, len(req.Payload.Path))
-		query      = Filtering{}
-		pagination = Pagination{}
-	)
-
-	for i := 0; i < len(req.Payload.Path); i++ {
-		paths[i].CollectionID = req.Payload.Path[i].CollectionId
-		paths[i].DocumentID = req.Payload.Path[i].DocumentId
-		paths[i].NewDocument = req.Payload.Path[i].NewDocument
-	}
-
-	if req.Payload.Query.Sort != nil {
-		query.Sort = Sort_Query{
-			OrderBy:   req.Payload.Query.Sort.OrderBy,
-			OrderType: OrderDir(req.Payload.Query.Sort.OrderType.Number()),
-		}
-	}
-
-	if req.Payload.Query.DateRange != nil {
-		query.DateRange = DateRange_Query{
-			Field: req.Payload.Query.DateRange.Field,
-			Start: req.GetPayload().Query.DateRange.Start.AsTime(),
-			End:   req.GetPayload().Query.DateRange.End.AsTime(),
-		}
-	}
-
-	filters := make([]Filter_Query, len(req.Payload.Query.Filter))
-	for i := 0; i < len(req.Payload.Query.Filter); i++ {
-		filters[i] = Filter_Query{
-			By: req.Payload.Query.Filter[i].By,
-			Op: req.Payload.Query.Filter[i].Op,
-		}
-		if req.Payload.Query.Filter[i].GetValString() != "" {
-			filters[i].Val = req.Payload.Query.Filter[i].GetValString()
-		} else if req.Payload.Query.Filter[i].GetValInt() < -1 {
-			filters[i].Val = req.Payload.Query.Filter[i].GetValInt()
-		} else {
-			filters[i].Val = req.Payload.Query.Filter[i].GetValBool()
-		}
-	}
-	query.Filter = filters
-
-	if req.Payload.IsPagination {
-		pagination = Pagination{
-			Page: req.Payload.Pagination.Page,
-		}
-	}
-
+	paths, query, pagination := srv.payloadBuilder(req.Payload)
 	var (
 		res = collectionxservice.RetriveResponse{}
 		p   = Payload{
@@ -151,11 +157,9 @@ func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveR
 		State:   "retriveFirestoreDocumentSuccess",
 		Message: "Retrive Firestore Document Success",
 		Meta: &collectionxservice.MetaProto{
-			Page:      p.pagination.Page,
-			PerPage:   p.limit,
-			Total:     int32(retriveRes.Total),
-			OrderBy:   p.query.Sort.OrderBy,
-			OrderType: p.query.Sort.OrderType.ToString(),
+			Page:    p.pagination.Page,
+			PerPage: p.limit,
+			Total:   int32(retriveRes.Total),
 		},
 	}
 	res.Data = data
@@ -175,55 +179,7 @@ func (srv *server) Snapshots(req *collectionxservice.SnapshotsRequest, stream co
 		})
 	}
 
-	var (
-		paths      = make([]Path, len(req.Payload.Path))
-		query      = Filtering{}
-		pagination = Pagination{}
-	)
-
-	for i := 0; i < len(req.Payload.Path); i++ {
-		paths[i].CollectionID = req.Payload.Path[i].CollectionId
-		paths[i].DocumentID = req.Payload.Path[i].DocumentId
-		paths[i].NewDocument = req.Payload.Path[i].NewDocument
-	}
-
-	if req.Payload.Query.Sort != nil {
-		query.Sort = Sort_Query{
-			OrderBy:   req.Payload.Query.Sort.OrderBy,
-			OrderType: OrderDir(req.Payload.Query.Sort.OrderType.Number()),
-		}
-	}
-
-	if req.Payload.Query.DateRange != nil {
-		query.DateRange = DateRange_Query{
-			Field: req.Payload.Query.DateRange.Field,
-			Start: req.GetPayload().Query.DateRange.Start.AsTime(),
-			End:   req.GetPayload().Query.DateRange.End.AsTime(),
-		}
-	}
-
-	filters := make([]Filter_Query, len(req.Payload.Query.Filter))
-	for i := 0; i < len(req.Payload.Query.Filter); i++ {
-		filters[i] = Filter_Query{
-			By: req.Payload.Query.Filter[i].By,
-			Op: req.Payload.Query.Filter[i].Op,
-		}
-		if req.Payload.Query.Filter[i].GetValString() != "" {
-			filters[i].Val = req.Payload.Query.Filter[i].GetValString()
-		} else if req.Payload.Query.Filter[i].GetValInt() < -1 {
-			filters[i].Val = req.Payload.Query.Filter[i].GetValInt()
-		} else {
-			filters[i].Val = req.Payload.Query.Filter[i].GetValBool()
-		}
-	}
-	query.Filter = filters
-
-	if req.Payload.IsPagination {
-		pagination = Pagination{
-			Page: req.Payload.Pagination.Page,
-		}
-	}
-
+	paths, query, pagination := srv.payloadBuilder(req.Payload)
 	var (
 		p = Payload{
 			RootCollection: req.Payload.RootCollection,

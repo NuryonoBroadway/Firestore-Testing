@@ -7,12 +7,10 @@ import (
 	"firebaseapi/helper"
 	"fmt"
 	"io"
-	"reflect"
 
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	structpb "google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Client interface {
@@ -70,73 +68,7 @@ func (p *Payload) Retrive() (*StandardAPI, error) {
 		return nil, fmt.Errorf("failed build collection core request data: %w", err)
 	}
 
-	pathProto := make([]*collectionxservice.PathProto, len(p.Path))
-	for i := 0; i < len(p.Path); i++ {
-		pathProto[i] = &collectionxservice.PathProto{
-			CollectionId: p.Path[i].CollectionID,
-			DocumentId:   p.Path[i].DocumentID,
-			NewDocument:  p.Path[i].NewDocument,
-		}
-	}
-
-	filters := make([]*collectionxservice.FilterProto, len(p.query.Filter))
-	if len(filters) != 0 {
-		for i := 0; i < len(p.query.Filter); i++ {
-			filters[i] = &collectionxservice.FilterProto{
-				By: p.query.Filter[i].By,
-				Op: p.query.Filter[i].Op,
-			}
-
-			xtyp := reflect.TypeOf(p.query.Filter[i].Val)
-			switch xtyp.Kind() {
-			case reflect.Bool:
-				filters[i].Val = &collectionxservice.FilterProto_ValBool{
-					ValBool: p.query.Filter[i].Val.(bool),
-				}
-			case reflect.String:
-				filters[i].Val = &collectionxservice.FilterProto_ValString{
-					ValString: p.query.Filter[i].Val.(string),
-				}
-			case reflect.Int64:
-				filters[i].Val = &collectionxservice.FilterProto_ValInt{
-					ValInt: p.query.Filter[i].Val.(int64),
-				}
-
-			}
-
-		}
-	}
-
-	sorts := new(collectionxservice.SortProto)
-	if p.query.Sort.OrderBy != "" {
-		sorts.OrderBy = p.query.Sort.OrderBy
-		sorts.OrderType = collectionxservice.OrderTypeProto(p.query.Sort.OrderType)
-	} else {
-		sorts.OrderBy = "created_at"
-		sorts.OrderType = collectionxservice.OrderTypeProto(Asc)
-	}
-
-	ranges := new(collectionxservice.DateRangeProto)
-	if p.query.DateRange.Field != "" {
-		ranges.Field = p.query.DateRange.Field
-		ranges.Start = timestamppb.New(p.query.DateRange.Start)
-		ranges.End = timestamppb.New(p.query.DateRange.End)
-	}
-
-	query := &collectionxservice.FilteringProto{
-		Sort:      sorts,
-		Filter:    filters,
-		DateRange: ranges,
-	}
-
-	pagination := new(collectionxservice.PaginationProto)
-	if p.isPagination {
-		if p.limit == 0 {
-			p.limit = 2 // default limit
-		}
-		pagination.Page = p.pagination.Page
-	}
-
+	pathProto, query, pagination := payloadBuilder(p)
 	payloadProto := collectionxservice.PayloadProto{
 		RootCollection: p.RootCollection,
 		RootDocument:   p.RootDocument,
@@ -192,11 +124,9 @@ func (p *Payload) Retrive() (*StandardAPI, error) {
 		}
 
 		response.Meta = Meta{
-			Page:      res.Api.Meta.Page,
-			PerPage:   res.Api.Meta.PerPage,
-			Total:     res.Api.Meta.Total,
-			OrderBy:   res.Api.Meta.OrderBy,
-			OrderType: res.Api.Meta.OrderType,
+			Page:    res.Api.Meta.Page,
+			PerPage: res.Api.Meta.PerPage,
+			Total:   res.Api.Meta.Total,
 		}
 	}
 
@@ -302,12 +232,7 @@ func (s *CollectionxSnapshots) Receive() (*Snapshots, error) {
 		return nil, s.err
 	}
 
-	return &Snapshots{
-		StandardAPIDefault: s.snapshots.StandardAPIDefault,
-		Kind:               s.snapshots.Kind,
-		Data:               s.snapshots.Data,
-		Timestamp:          s.snapshots.Timestamp,
-	}, nil
+	return &s.snapshots, nil
 }
 
 func (s *CollectionxSnapshots) Close() {
@@ -328,73 +253,7 @@ func (p *Payload) Snapshots() (*CollectionxSnapshots, error) {
 		return nil, fmt.Errorf("failed build collection core request data: %w", err)
 	}
 
-	pathProto := make([]*collectionxservice.PathProto, len(p.Path))
-	for i := 0; i < len(p.Path); i++ {
-		pathProto[i] = &collectionxservice.PathProto{
-			CollectionId: p.Path[i].CollectionID,
-			DocumentId:   p.Path[i].DocumentID,
-			NewDocument:  p.Path[i].NewDocument,
-		}
-	}
-
-	filters := make([]*collectionxservice.FilterProto, len(p.query.Filter))
-	if len(filters) != 0 {
-		for i := 0; i < len(p.query.Filter); i++ {
-			filters[i] = &collectionxservice.FilterProto{
-				By: p.query.Filter[i].By,
-				Op: p.query.Filter[i].Op,
-			}
-
-			xtyp := reflect.TypeOf(p.query.Filter[i].Val)
-			switch xtyp.Kind() {
-			case reflect.Bool:
-				filters[i].Val = &collectionxservice.FilterProto_ValBool{
-					ValBool: p.query.Filter[i].Val.(bool),
-				}
-			case reflect.String:
-				filters[i].Val = &collectionxservice.FilterProto_ValString{
-					ValString: p.query.Filter[i].Val.(string),
-				}
-			case reflect.Int64:
-				filters[i].Val = &collectionxservice.FilterProto_ValInt{
-					ValInt: p.query.Filter[i].Val.(int64),
-				}
-
-			}
-
-		}
-	}
-
-	sorts := new(collectionxservice.SortProto)
-	if p.query.Sort.OrderBy != "" {
-		sorts.OrderBy = p.query.Sort.OrderBy
-		sorts.OrderType = collectionxservice.OrderTypeProto(p.query.Sort.OrderType)
-	} else {
-		sorts.OrderBy = "created_at"
-		sorts.OrderType = collectionxservice.OrderTypeProto(Asc)
-	}
-
-	ranges := new(collectionxservice.DateRangeProto)
-	if p.query.DateRange.Field != "" {
-		ranges.Field = p.query.DateRange.Field
-		ranges.Start = timestamppb.New(p.query.DateRange.Start)
-		ranges.End = timestamppb.New(p.query.DateRange.End)
-	}
-
-	query := &collectionxservice.FilteringProto{
-		Sort:      sorts,
-		Filter:    filters,
-		DateRange: ranges,
-	}
-
-	pagination := new(collectionxservice.PaginationProto)
-	if p.isPagination {
-		if p.limit == 0 {
-			p.limit = 2 // default limit
-		}
-		pagination.Page = p.pagination.Page
-	}
-
+	pathProto, query, pagination := payloadBuilder(p)
 	payloadProto := collectionxservice.PayloadProto{
 		RootCollection: p.RootCollection,
 		RootDocument:   p.RootDocument,

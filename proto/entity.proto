@@ -49,7 +49,7 @@ message SortProto {
 
 
 message FilteringProto {
-    optional SortProto sort = 1;
+    repeated SortProto sort = 1;
     repeated FilterProto filter = 2;
     optional DateRangeProto date_range = 3;
 }
@@ -62,8 +62,6 @@ message MetaProto {
     int32 page = 1;
     int32 per_page = 2;
     int32 total = 3;
-    string order_by = 4;
-    string order_type = 5;
 }
 
 message MetadataProto {
