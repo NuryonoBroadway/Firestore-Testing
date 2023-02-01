@@ -1,4 +1,4 @@
-package collectionxserver
+package collection_core_server
 
 import (
 	"context"

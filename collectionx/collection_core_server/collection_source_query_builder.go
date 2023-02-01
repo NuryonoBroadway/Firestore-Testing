@@ -1,4 +1,4 @@
-package collectionxserver
+package collection_core_server
 
 import (
 	"firebaseapi/helper"
@@ -6,7 +6,17 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-func pathBuilder(sd *collectionCore_SourceDocumentImplementation, p *Payload) (*firestore.CollectionRef, *firestore.DocumentRef, bool) {
+func (sd *sourceDocument) rootCollection(p *Payload) *firestore.CollectionRef {
+	sd.config.RootCollection = p.RootCollection
+	return sd.client.Collection(sd.config.RootCollection)
+}
+
+func (sd *sourceDocument) rootDocument(p *Payload) *firestore.DocumentRef {
+	sd.config.RootDocument = p.RootDocument
+	return sd.rootCollection(p).Doc(sd.config.RootDocument)
+}
+
+func (sd *sourceDocument) pathBuilder(p *Payload) (*firestore.CollectionRef, *firestore.DocumentRef, bool) {
 	var (
 		isLastDoc bool
 		docRef    *firestore.DocumentRef
@@ -37,7 +47,7 @@ func pathBuilder(sd *collectionCore_SourceDocumentImplementation, p *Payload) (*
 	return colRef, docRef, isLastDoc
 }
 
-func queryBuilder(query firestore.Query, p *Payload) firestore.Query {
+func (sd *sourceDocument) queryBuilder(query firestore.Query, p *Payload) firestore.Query {
 	for i := 0; i < len(p.query.Sort); i++ {
 		var dir firestore.Direction
 		switch p.query.Sort[i].OrderType {
@@ -55,7 +65,7 @@ func queryBuilder(query firestore.Query, p *Payload) firestore.Query {
 		query = query.Where(filter.By, filter.Op, filter.Val)
 	}
 
-	if p.query.DateRange.Field != "" {
+	if len(p.query.DateRange.Field) > 0 {
 		ranges := p.query.DateRange
 		query = query.Where(
 			ranges.Field,
@@ -74,7 +84,7 @@ func queryBuilder(query firestore.Query, p *Payload) firestore.Query {
 
 	// limitation on firestore cursor is we cannot specify the page number we want
 	if p.isPagination {
-		page := p.pagination.Page
+		page := p.page
 		offset := (page - 1) * p.limit
 		query = query.Offset(int(offset))
 	}

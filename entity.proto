@@ -5,7 +5,7 @@ package collectionx;
 import "google/protobuf/timestamp.proto";
 // import "google/protobuf/any.proto";
 
-option go_package = "protobuf/privy/v1/collectionxservice";
+option go_package = "protobuf/privy/v1/collection_core_service";
 
 message ErrorProto {
     string general = 1;

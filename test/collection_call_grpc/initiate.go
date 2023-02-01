@@ -1,8 +1,8 @@
 package collectioncallgrpc
 
 import (
+	"firebaseapi/collectionx/collection_core_server"
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
-	collectionxserver "firebaseapi/collectionx/collectionx_server"
 	"firebaseapi/helper"
 	"net"
 
@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-func CallGrpc(cfg *collectionxserver.ServerConfig) *grpc.Server {
-	collx := collectionxserver.NewCollectionCore_SourceDocument(cfg)
-	srv := collectionxserver.NewServer(collx)
+func CallGrpc(cfg *collection_core_server.ServerConfig) *grpc.Server {
+	collx := collection_core_server.NewSourceDocument(cfg)
+	srv := collection_core_server.NewServer(collx)
 	defer srv.GracefulStop()
 
 	logger.Infof("starting privypass-collection-core-se grpc services... 0.0.0.0:9090")

@@ -2,21 +2,16 @@ syntax = "proto3";
 
 package collectionx;
 
-import "entity.proto";
+import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 
-option go_package = "protobuf/privy/v1/collectionxservice";
+option go_package = "protobuf/privy/v1/collection_core_service";
 
 /*
 =================
     Entity
 =================
 */
-
-// TODO : Add filtering support for firestore
-
-
-// TODO : Add Sorting Support
 
 message PayloadProto {
 	string root_collection = 1;
@@ -26,7 +21,7 @@ message PayloadProto {
     bool is_pagination = 5;
     bool is_delete = 6;
 	repeated PathProto path = 7;
-    FilteringProto query = 8;
+    QueryProto query = 8;
     PaginationProto pagination = 9;
 }
 
@@ -35,6 +30,95 @@ message PathProto {
 	string document_id = 2;
 	bool new_document = 3;
 }
+
+message StandardAPIProto {
+    string status = 1;
+    string entity = 2;
+    string state = 3;
+    string message = 4;
+    optional MetaProto meta = 5;
+    optional google.protobuf.Struct errors = 6;
+}
+
+message DateRangeProto {
+    string field = 1;
+    google.protobuf.Timestamp start = 2;
+    google.protobuf.Timestamp end = 3;
+}
+
+message FilterProto {
+    string by = 1;
+    string op = 2;
+    bytes val = 3;
+}
+
+message SortProto {
+    string order_by = 1;
+    OrderTypeProto order_type = 2;
+}
+
+message QueryProto {
+    repeated SortProto sort = 1;
+    repeated FilterProto filter = 2;
+    optional DateRangeProto date_range = 3;
+}
+
+message PaginationProto {
+    int32 page = 1;
+}
+
+message MetaProto {
+    int32 page = 1;
+    int32 per_page = 2;
+    int32 size = 3;
+    int32 total = 4;
+}
+
+message MetadataProto {
+    int32 page = 1;
+    QueryProto query = 2;
+}
+
+enum OrderTypeProto {
+    ORDER_TYPE_NONE = 0;
+    ORDER_TYPE_ASC = 1;
+    ORDER_TYPE_DESC = 2;
+}
+
+// Next Version: 3.0
+// TODO: 
+//  - Handle Stream data
+//  - Usecase Steam data
+//
+// message TimestampProto  {
+//     google.protobuf.Timestamp created_time = 1;
+//     google.protobuf.Timestamp read_time = 2;
+//     google.protobuf.Timestamp update_time = 3;
+// }
+
+// message DocumentChange {
+//     DocumentChangeKind kind = 1;
+//     bytes data = 2;
+//     TimestampProto timestamp = 3;
+// }
+//
+// enum DocumentChangeKind {
+//     DOCUMENT_KIND_ADDED = 0;
+//     DOCUMENT_KIND_REMOVED = 1;
+//     DOCUMENT_KIND_MODIFIED = 2;
+//     DOCUMENT_KIND_SNAPSHOTS = 3;
+// }
+//
+// message SnapshotsResponse {
+//     StandardAPIProto api = 1;
+//     DocumentChange document_change = 2;
+// }
+//
+// message SnapshotsRequest {
+//     PayloadProto payload = 1;
+// }
+//
+// rpc Snapshots(SnapshotsRequest) returns (stream SnapshotsResponse);
 
 /*
 =================
@@ -47,13 +131,6 @@ message RetriveResponse {
     bytes data = 2;
 }
 
-message SnapshotsResponse {
-    StandardAPIProto api = 1;
-    DocumentChange document_change = 2;
-}
-
-
-
 /*
 =================
     Request
@@ -64,11 +141,6 @@ message RetriveRequest {
     PayloadProto payload = 1;
 }
 
-message SnapshotsRequest {
-    PayloadProto payload = 1;
-}
-
 service ServiceCollection {
     rpc Retrive(RetriveRequest) returns (RetriveResponse);
-    rpc Snapshots(SnapshotsRequest) returns (stream SnapshotsResponse);
 }

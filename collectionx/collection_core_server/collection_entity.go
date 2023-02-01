@@ -1,7 +1,7 @@
-package collectionxserver
+package collection_core_server
 
 import (
-	collectionxservice "firebaseapi/collectionx/collectionx_service"
+	"firebaseapi/collectionx/collection_core_service"
 	"time"
 )
 
@@ -11,15 +11,17 @@ type Path struct {
 	NewDocument  bool   `json:"new_document,omitempty"`
 }
 
-type DataResponse struct {
-	Total int
-	Data  interface{}
+type SourceData struct {
+	Size int
+	Data interface{}
+}
+
+type ObjectData struct {
+	RefID  string                 `json:"ref_id"`
+	Object map[string]interface{} `json:"object"`
 }
 
 type Payload struct {
-	Environment    string
-	ServiceName    string
-	ProjectName    string
 	RootCollection string
 	RootDocument   string
 
@@ -28,20 +30,17 @@ type Payload struct {
 
 	// pagination
 	limit int32
-
-	pagination Pagination
-	query      Filtering
+	page  int32
+	query Queries
 
 	// condition
 	isPagination bool
 	isDelete     bool
 }
 
-type Pagination struct {
-	Page int32
-}
+// Queries
 
-type Filtering struct {
+type Queries struct {
 	Sort      []Sort_Query
 	Filter    []Filter_Query
 	DateRange DateRange_Query
@@ -64,11 +63,13 @@ type DateRange_Query struct {
 	End   time.Time
 }
 
+// Sorting
+
 type OrderDir int32
 
 const (
-	Asc  OrderDir = OrderDir(collectionxservice.OrderTypeProto_ORDER_TYPE_ASC)
-	Desc OrderDir = OrderDir(collectionxservice.OrderTypeProto_ORDER_TYPE_DESC)
+	Asc  OrderDir = OrderDir(collection_core_service.OrderTypeProto_ORDER_TYPE_ASC)
+	Desc OrderDir = OrderDir(collection_core_service.OrderTypeProto_ORDER_TYPE_DESC)
 )
 
 func (o OrderDir) ToString() string {
@@ -78,6 +79,6 @@ func (o OrderDir) ToString() string {
 	case Desc:
 		return "DESC"
 	default:
-		return "not-implemented"
+		return ""
 	}
 }

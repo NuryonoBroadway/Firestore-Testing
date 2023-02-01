@@ -2,21 +2,18 @@ package collectionxclient
 
 import (
 	"context"
-	collectionxservice "firebaseapi/collectionx/collectionx_service"
+	"firebaseapi/collectionx/collection_core_service"
 	"firebaseapi/helper"
 	"time"
 
 	grpc "google.golang.org/grpc"
 )
 
-// Document cant search by filter
 type Documenter interface {
 	Col(id string) Collector
-	Snapshots() (*CollectionxSnapshots, error)
 	Retrive() (*StandardAPI, error)
 }
 
-// Collector can search by filter
 type Collector interface {
 	Doc(id string) Documenter
 	NewDoc() Documenter
@@ -25,7 +22,6 @@ type Collector interface {
 	Limit(limit int) *Payload
 	DataRange(field string, start time.Time, end time.Time) *Payload
 	Page(page int32) *Payload
-	Snapshots() (*CollectionxSnapshots, error)
 	Retrive() (*StandardAPI, error)
 }
 
@@ -35,38 +31,38 @@ type Path struct {
 	NewDocument  bool   `json:"new_document,omitempty"`
 }
 
+type SourceData struct {
+	Size int
+	Data interface{}
+}
+
+type ObjectData struct {
+	RefID  string                 `json:"ref_id"`
+	Object map[string]interface{} `json:"object"`
+}
+
 type Payload struct {
 	conn *grpc.ClientConn
 	ctx  context.Context
 
-	Environment    string
-	ServiceName    string
-	ProjectName    string
 	RootCollection string
 	RootDocument   string
 
 	Data map[string]interface{}
 	Path []Path
 
-	// limitation
-	limit int32
-
 	// pagination
-	pagination Pagination
-
-	// filtering
-	query Filtering
+	limit int32
+	page  int32
+	query Queries
 
 	// condition
 	isPagination bool
-	isDelete     bool
 }
 
-type Pagination struct {
-	Page int32
-}
+// Queries
 
-type Filtering struct {
+type Queries struct {
 	Sort      []Sort_Query
 	Filter    []Filter_Query
 	DateRange DateRange_Query
@@ -89,29 +85,43 @@ type DateRange_Query struct {
 	End   time.Time
 }
 
+// Sorting
+
 type OrderDir int32
 
 const (
-	Asc  OrderDir = OrderDir(collectionxservice.OrderTypeProto_ORDER_TYPE_ASC)
-	Desc OrderDir = OrderDir(collectionxservice.OrderTypeProto_ORDER_TYPE_DESC)
+	Asc  OrderDir = OrderDir(collection_core_service.OrderTypeProto_ORDER_TYPE_ASC)
+	Desc OrderDir = OrderDir(collection_core_service.OrderTypeProto_ORDER_TYPE_DESC)
 )
 
-func NewCollectionPayloads(opts ...func(p *Payload)) Documenter {
-	p := Payload{}
-	for _, v := range opts {
-		v(&p)
+func (o OrderDir) ToString() string {
+	switch o {
+	case Asc:
+		return "ASC"
+	case Desc:
+		return "DESC"
+	default:
+		return ""
 	}
+}
 
+type OptionPayload func(p *Payload)
+
+func NewCollectionPayloads(opts ...OptionPayload) Documenter {
+	p := Payload{}
+	for i := 0; i < len(opts); i++ {
+		opts[i](&p)
+	}
 	return &p
 }
 
-func WithRootCollection(in string) func(p *Payload) {
+func WithRootCollection(in string) OptionPayload {
 	return func(p *Payload) {
 		p.RootCollection = in
 	}
 }
 
-func WithRootDocuments(in string) func(p *Payload) {
+func WithRootDocuments(in string) OptionPayload {
 	if in == "" {
 		in = "default"
 	}
@@ -121,13 +131,13 @@ func WithRootDocuments(in string) func(p *Payload) {
 	}
 }
 
-func WithGRPCCon(conn *grpc.ClientConn) func(p *Payload) {
+func WithGRPCCon(conn *grpc.ClientConn) OptionPayload {
 	return func(p *Payload) {
 		p.conn = conn
 	}
 }
 
-func WithContext(ctx context.Context) func(p *Payload) {
+func WithContext(ctx context.Context) OptionPayload {
 	return func(p *Payload) {
 		p.ctx = ctx
 	}
@@ -197,14 +207,12 @@ func (p *Payload) Where(by string, op helper.Operator, val interface{}) *Payload
 
 func (p *Payload) Page(page int32) *Payload {
 	p.isPagination = true
-	p.pagination = Pagination{
-		Page: page,
-	}
+	p.page = page
 	return p
 }
 
 /*
-Standar API
+	Standar API
 */
 
 type StandardAPIDefault struct {
@@ -224,6 +232,7 @@ type StandardAPI struct {
 type Meta struct {
 	Page    int32 `json:"page"`
 	PerPage int32 `json:"per_page"`
+	Size    int32 `json:"size"`
 	Total   int32 `json:"total"`
 }
 
@@ -260,53 +269,4 @@ func (s *StandardAPI) MapValue() map[string]interface{} {
 	}
 
 	return nil
-}
-
-/*
-Document Change
-*/
-
-type Snapshots struct {
-	StandardAPIDefault `json:"standard_api"`
-	Kind               string
-	Data               Data
-	Timestamp          Timestamp
-}
-
-type CollectionxSnapshots struct {
-	snapshots Snapshots
-
-	isCol bool
-	ws    collectionxservice.ServiceCollection_SnapshotsClient
-	err   error
-}
-
-type DocumentKind int32
-
-const (
-	DOCUMENT_KIND_ADDED     DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_ADDED)
-	DOCUMENT_KIND_REMOVED   DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_REMOVED)
-	DOCUMENT_KIND_MODIFIED  DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_MODIFIED)
-	DOCUMENT_KIND_SNAPSHOTS DocumentKind = DocumentKind(collectionxservice.DocumentChangeKind_DOCUMENT_KIND_SNAPSHOTS)
-)
-
-func (d DocumentKind) ToString() string {
-	switch d {
-	case DOCUMENT_KIND_ADDED:
-		return "Document Added"
-	case DOCUMENT_KIND_REMOVED:
-		return "Document Removed"
-	case DOCUMENT_KIND_MODIFIED:
-		return "Document Modified"
-	case DOCUMENT_KIND_SNAPSHOTS:
-		return "Document Snapshots"
-	default:
-		return "not-implemented"
-	}
-}
-
-type Timestamp struct {
-	CreatedTime time.Time `json:"created_time"`
-	ReadTime    time.Time `json:"read_time"`
-	UpdateTime  time.Time `json:"modified_time"`
 }
