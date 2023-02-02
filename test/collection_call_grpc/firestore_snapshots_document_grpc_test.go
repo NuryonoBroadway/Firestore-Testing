@@ -1,6 +1,7 @@
 package collectioncallgrpc
 
 import (
+	"context"
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
 	"io"
 	"testing"
@@ -22,9 +23,10 @@ func Test_Document_Snapshots_GRPC(t *testing.T) {
 
 	var (
 		collection_core_client = collectionxclient.NewCollectionClient(cfg)
+		ctx                    = context.Background()
 	)
 
-	conn, err := collection_core_client.OpenConnection()
+	conn, err := collection_core_client.OpenConnection(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -32,7 +34,7 @@ func Test_Document_Snapshots_GRPC(t *testing.T) {
 
 	var (
 		// main_col = collectionx.NewCollectionPayloads(collectionx.WithRootCollection(config.ExternalCollection))
-		query = conn.Col("root-collection-test").Doc("default").Col("cities").Doc("JKT")
+		query = conn.Col("root-collection-test").Doc("default").Col("cities").Doc("SF")
 	)
 
 	snap, err := query.Snapshots()

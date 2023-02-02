@@ -47,4 +47,17 @@ func Test_Firestore_Seed_Data(t *testing.T) {
 			return
 		}
 	}
+
+	aggregator := struct {
+		Name string `firestore:"name"`
+		Size int    `firestore:"size"`
+	}{
+		Name: "aggregator",
+		Size: len(cities),
+	}
+
+	if _, err := doc.Collection("cities").Doc("aggregator_cities").Set(ctx, aggregator); err != nil {
+		t.Error(err)
+		return
+	}
 }

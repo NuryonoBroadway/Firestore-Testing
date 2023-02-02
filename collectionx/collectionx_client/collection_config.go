@@ -5,7 +5,9 @@ import (
 )
 
 type configClient struct {
+	ProjectName           string `json:"project_name"`
 	GrpcAddress           string `json:"grpc_address" validate:"required"`
+	pubsubCredential      string
 	PubSubTopic           string `json:"pubsub_topic"`
 	ProjectRootCollection string `json:"project_root_collection" validate:"required"`
 	ProjectRootDocument   string `json:"project_root_document"`
@@ -28,12 +30,24 @@ func NewClientConfig(opts ...clientCollector) (*configClient, error) {
 		}
 	}
 
+	if p.PubSubTopic == "" {
+		p.PubSubTopic = p.ProjectRootCollection
+	}
+
+	p.pubsubCredential = "/home/slvr/FirebaseTestingApi/config/cellular-effect-306806-afdfaa2f69e4.json"
+
 	return &p, nil
 }
 
 func WithGrpcAddress(address string) clientCollector {
 	return func(c *configClient) {
 		c.GrpcAddress = address
+	}
+}
+
+func WithProjectName(name string) clientCollector {
+	return func(c *configClient) {
+		c.ProjectName = name
 	}
 }
 

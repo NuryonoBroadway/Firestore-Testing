@@ -1,6 +1,7 @@
 package collectioncallgrpc
 
 import (
+	"context"
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
 	"testing"
 
@@ -20,9 +21,10 @@ func Test_Get_Documents_With_Sort_GRPC(t *testing.T) {
 
 	var (
 		collection_core_client = collectionxclient.NewCollectionClient(cfg)
+		ctx                    = context.Background()
 	)
 
-	conn, err := collection_core_client.OpenConnection()
+	conn, err := collection_core_client.OpenConnection(ctx)
 	if err != nil {
 		t.Error(err)
 	}

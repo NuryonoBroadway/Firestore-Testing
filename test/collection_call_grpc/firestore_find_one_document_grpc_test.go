@@ -1,6 +1,7 @@
 package collectioncallgrpc
 
 import (
+	"context"
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
 	"testing"
 
@@ -20,9 +21,10 @@ func Test_Find_One_Documents_GRPC(t *testing.T) {
 
 	var (
 		collection_core_client = collectionxclient.NewCollectionClient(cfg)
+		ctx                    = context.Background()
 	)
 
-	conn, err := collection_core_client.OpenConnection()
+	conn, err := collection_core_client.OpenConnection(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -30,7 +32,7 @@ func Test_Find_One_Documents_GRPC(t *testing.T) {
 
 	var (
 		// main_col = collectionx.NewCollectionPayloads(collectionx.WithRootCollection(config.ExternalCollection))
-		query = conn.Col("root-collection-test").Doc("default").Col("cities")
+		query = conn.Col("development-privypass_collection-core-se").Doc("default").Col("root-collection-test").Doc("default").Col("cities")
 	)
 
 	testCases := []struct {
@@ -57,7 +59,7 @@ func Test_Find_One_Documents_GRPC(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			spew.Dump(res.MapValue())
+			spew.Dump(res)
 		})
 
 	}

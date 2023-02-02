@@ -41,22 +41,22 @@ func NewCollectionCoreServer(source CollectionCore_SourceDocument) *server {
 	}
 }
 
-func (srv *server) payloadBuilder(req *collectionxservice.PayloadProto) ([]Path, Filtering, Pagination) {
-	var (
-		paths      = make([]Path, len(req.Path))
-		query      = Filtering{}
-		pagination = Pagination{}
-	)
-
-	for i := 0; i < len(req.Path); i++ {
-		paths[i].CollectionID = req.Path[i].CollectionId
-		paths[i].DocumentID = req.Path[i].DocumentId
-		paths[i].NewDocument = req.Path[i].NewDocument
+func (srv *server) payloadBuilder(req *collectionxservice.PayloadProto) (path []Path, query Filtering, page int32) {
+	path = make([]Path, len(req.Path))
+	query = Filtering{
+		Sort:   make([]Sort_Query, len(req.Query.Sort)),
+		Filter: make([]Filter_Query, len(req.Query.Filter)),
 	}
 
-	sorts := make([]Sort_Query, len(req.Query.Sort))
+	for i := 0; i < len(req.Path); i++ {
+		path[i].CollectionID = req.Path[i].CollectionId
+		path[i].DocumentID = req.Path[i].DocumentId
+		path[i].NewDocument = req.Path[i].NewDocument
+		path[i].CollectionGroup = req.Path[i].CollectionGroup
+	}
+
 	for i := 0; i < len(req.Query.Sort); i++ {
-		sorts[i] = Sort_Query{
+		query.Sort[i] = Sort_Query{
 			OrderBy:   req.Query.Sort[i].OrderBy,
 			OrderType: OrderDir(req.Query.Sort[i].OrderType),
 		}
@@ -70,44 +70,29 @@ func (srv *server) payloadBuilder(req *collectionxservice.PayloadProto) ([]Path,
 		}
 	}
 
-	filters := make([]Filter_Query, len(req.Query.Filter))
 	for i := 0; i < len(req.Query.Filter); i++ {
-		filters[i] = Filter_Query{
+		query.Filter[i] = Filter_Query{
 			By: req.Query.Filter[i].By,
 			Op: req.Query.Filter[i].Op,
 		}
-		if req.Query.Filter[i].GetValString() != "" {
-			filters[i].Val = req.Query.Filter[i].GetValString()
-		} else if req.Query.Filter[i].GetValInt() < -1 {
-			filters[i].Val = req.Query.Filter[i].GetValInt()
-		} else {
-			filters[i].Val = req.Query.Filter[i].GetValBool()
+		if err := json.Unmarshal(req.Query.Filter[i].Val, &query.Filter[i].Val); err != nil {
+			return nil, Filtering{}, 0
 		}
 	}
-	query.Filter = filters
 
 	if req.IsPagination {
-		pagination = Pagination{
-			Page: req.Pagination.Page,
-		}
+		page = req.Page
 	}
 
-	return paths, query, pagination
+	return path, query, page
 }
 
 func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveRequest) (*collectionxservice.RetriveResponse, error) {
 	if req.Payload == nil {
-		return &collectionxservice.RetriveResponse{
-			Api: &collectionxservice.StandardAPIProto{
-				Status:  "ERROR",
-				Entity:  "retriveFirestoreDocument",
-				State:   "retriveFirestoreDocumentError",
-				Message: "Retrive Firestore Document Failed Read Source Data",
-			},
-		}, nil
+		return nil, status.Error(codes.Unavailable, "payload unavailable")
 	}
 
-	paths, query, pagination := srv.payloadBuilder(req.Payload)
+	paths, query, page := srv.payloadBuilder(req.Payload)
 	var (
 		res = collectionxservice.RetriveResponse{}
 		p   = Payload{
@@ -116,50 +101,28 @@ func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveR
 			limit:          req.Payload.Limit,
 			isPagination:   req.Payload.IsPagination,
 			isDelete:       req.Payload.IsDelete,
-			Data:           req.Payload.Data.AsMap(),
 			Path:           paths,
-			pagination:     pagination,
+			page:           page,
 			query:          query,
 		}
 	)
 
 	retriveRes, err := srv.source.Retrive(ctx, &p)
 	if err != nil {
-		res.Api = &collectionxservice.StandardAPIProto{
-			Status:  "ERROR",
-			Entity:  "retriveFirestoreDocument",
-			State:   "retriveFirestoreDocumentError",
-			Message: "Retrive Firestore Document Failed Read Source Data",
-			Error: &collectionxservice.ErrorProto{
-				General: err.Error(),
-			},
-		}
-		return &res, nil
+		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
 	data, err := json.Marshal(retriveRes.Data)
 	if err != nil {
-		res.Api = &collectionxservice.StandardAPIProto{
-			Status:  "ERROR",
-			Entity:  "retriveFirestoreDocument",
-			State:   "retriveFirestoreDocumentMarshalResponseError",
-			Message: "Retrive Firestore Document Failed Build Result Data",
-			Error: &collectionxservice.ErrorProto{
-				General: err.Error(),
-			},
-		}
-		return &res, nil
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	res.Api = &collectionxservice.StandardAPIProto{
-		Status:  "SUCCESS",
-		Entity:  "retriveFirestoreDocument",
-		State:   "retriveFirestoreDocumentSuccess",
 		Message: "Retrive Firestore Document Success",
 		Meta: &collectionxservice.MetaProto{
-			Page:    p.pagination.Page,
+			Page:    p.page,
 			PerPage: p.limit,
-			Total:   int32(retriveRes.Total),
+			Total:   int32(retriveRes.Size),
 		},
 	}
 	res.Data = data
@@ -169,17 +132,10 @@ func (srv *server) Retrive(ctx context.Context, req *collectionxservice.RetriveR
 
 func (srv *server) Snapshots(req *collectionxservice.SnapshotsRequest, stream collectionxservice.ServiceCollection_SnapshotsServer) error {
 	if req.Payload == nil {
-		return stream.Send(&collectionxservice.SnapshotsResponse{
-			Api: &collectionxservice.StandardAPIProto{
-				Status:  "ERROR",
-				Entity:  "snapshotsFirestore",
-				State:   "snapshotsFirestoreError",
-				Message: "Snapshots Firestore Failed Read Source Data",
-			},
-		})
+		return status.Error(codes.Unavailable, "payload unavailable")
 	}
 
-	paths, query, pagination := srv.payloadBuilder(req.Payload)
+	paths, query, page := srv.payloadBuilder(req.Payload)
 	var (
 		p = Payload{
 			RootCollection: req.Payload.RootCollection,
@@ -187,26 +143,15 @@ func (srv *server) Snapshots(req *collectionxservice.SnapshotsRequest, stream co
 			limit:          req.Payload.Limit,
 			isPagination:   req.Payload.IsPagination,
 			isDelete:       req.Payload.IsDelete,
-			Data:           req.Payload.Data.AsMap(),
 			Path:           paths,
-			pagination:     pagination,
+			page:           page,
 			query:          query,
 		}
 	)
 
 	col, doc, err := srv.source.Snapshots(stream.Context(), &p)
 	if err != nil {
-		return stream.Send(&collectionxservice.SnapshotsResponse{
-			Api: &collectionxservice.StandardAPIProto{
-				Status:  "ERROR",
-				Entity:  "snapshotsFirestore",
-				State:   "snapshotsFirestoreError",
-				Message: "Snapshots Firestore Failed Start Snapshots",
-				Error: &collectionxservice.ErrorProto{
-					General: err.Error(),
-				},
-			},
-		})
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	if col != nil {
@@ -215,39 +160,19 @@ func (srv *server) Snapshots(req *collectionxservice.SnapshotsRequest, stream co
 		for {
 			snap, err := col.Next()
 			if err != nil {
-				if e := status.Code(err); e == codes.Canceled || e == codes.DeadlineExceeded {
-					return stream.Send(&collectionxservice.SnapshotsResponse{
-						Api: &collectionxservice.StandardAPIProto{
-							Status:  "ERROR",
-							Entity:  "snapshotsFirestoreCollection",
-							State:   "snapshotsFirestoreCollectionError",
-							Message: "Snapshots Firestore Collection Failed Context Error",
-							Error: &collectionxservice.ErrorProto{
-								General: err.Error(),
-							},
-						},
-					})
+				switch status.Code(err) {
+				case codes.Canceled:
+					return status.Error(codes.Canceled, "context canceled")
+				case codes.DeadlineExceeded:
+					return status.Error(codes.DeadlineExceeded, "context deadline exceeded")
+				default:
+					return status.Error(codes.Internal, err.Error())
 				}
-
-				return stream.Send(&collectionxservice.SnapshotsResponse{
-					Api: &collectionxservice.StandardAPIProto{
-						Status:  "ERROR",
-						Entity:  "snapshotsFirestoreCollection",
-						State:   "snapshotsFirestoreCollectionError",
-						Message: "Snapshots Firestore Collection Failed Error Found",
-						Error: &collectionxservice.ErrorProto{
-							General: err.Error(),
-						},
-					},
-				})
 			}
 
 			var (
 				response = &collectionxservice.SnapshotsResponse{
 					Api: &collectionxservice.StandardAPIProto{
-						Status:  "SUCCESS",
-						Entity:  "snapshotsFirestoreCollection",
-						State:   "snapshotsFirestoreCollectionSuccess",
 						Message: "Snapshots Firestore Collection Success",
 					},
 				}
@@ -257,16 +182,7 @@ func (srv *server) Snapshots(req *collectionxservice.SnapshotsRequest, stream co
 				for _, change := range snap.Changes {
 					data, err := json.Marshal(change.Doc.Data())
 					if err != nil {
-						return stream.Send(&collectionxservice.SnapshotsResponse{
-							Api: &collectionxservice.StandardAPIProto{
-								Status:  "ERROR",
-								Entity:  "retriveFirestoreCollection",
-								State:   "retriveFirestoreCollectionMarshalResponseError",
-								Message: "Retrive Firestore Collection Failed Build Result Data",
-								Error: &collectionxservice.ErrorProto{
-									General: err.Error(),
-								},
-							}})
+						return status.Error(codes.Internal, err.Error())
 					}
 
 					response.DocumentChange = &collectionxservice.DocumentChange{
@@ -305,70 +221,33 @@ func (srv *server) Snapshots(req *collectionxservice.SnapshotsRequest, stream co
 		for {
 			snap, err := doc.Next()
 			if err != nil {
-				if e := status.Code(err); e == codes.Canceled || e == codes.DeadlineExceeded {
-					return stream.Send(&collectionxservice.SnapshotsResponse{
-						Api: &collectionxservice.StandardAPIProto{
-							Status:  "ERROR",
-							Entity:  "snapshotsFirestoreDocument",
-							State:   "snapshotsFirestoreDocumentError",
-							Message: "Snapshots Firestore Document Failed Context Error",
-							Error: &collectionxservice.ErrorProto{
-								General: err.Error(),
-							},
-						},
-					})
+				if err != nil {
+					switch status.Code(err) {
+					case codes.Canceled:
+						return status.Error(codes.Canceled, "context canceled")
+					case codes.DeadlineExceeded:
+						return status.Error(codes.DeadlineExceeded, "context deadline exceeded")
+					default:
+						return status.Error(codes.Internal, err.Error())
+					}
 				}
-
-				return stream.Send(&collectionxservice.SnapshotsResponse{
-					Api: &collectionxservice.StandardAPIProto{
-						Status:  "ERROR",
-						Entity:  "snapshotsFirestoreDocument",
-						State:   "snapshotsFirestoreDocumentError",
-						Message: "Snapshots Firestore Document Failed Error Found",
-						Error: &collectionxservice.ErrorProto{
-							General: err.Error(),
-						},
-					},
-				})
 			}
 
 			var (
 				response = &collectionxservice.SnapshotsResponse{
 					Api: &collectionxservice.StandardAPIProto{
-						Status:  "SUCCESS",
-						Entity:  "snapshotsFirestoreDocument",
-						State:   "snapshotsFirestoreDocumentSuccess",
 						Message: "Snapshots Firestore Document Success",
 					},
 				}
 			)
 
 			if !snap.Exists() {
-				return stream.Send(&collectionxservice.SnapshotsResponse{
-					Api: &collectionxservice.StandardAPIProto{
-						Status:  "ERROR",
-						Entity:  "snapshotsFirestoreDocument",
-						State:   "snapshotsFirestoreDocumentError",
-						Message: "Snapshots Firestore Document Failed Error Found",
-						Error: &collectionxservice.ErrorProto{
-							General: errors.New("document no longer exists").Error(),
-						},
-					},
-				})
+				return status.Error(codes.NotFound, "document not found")
 			}
 
 			data, err := json.Marshal(snap.Data())
 			if err != nil {
-				return stream.Send(&collectionxservice.SnapshotsResponse{
-					Api: &collectionxservice.StandardAPIProto{
-						Status:  "ERROR",
-						Entity:  "snapshotsFirestoreDocument",
-						State:   "snapshotsFirestoreDocumentMarshalResponseError",
-						Message: "Retrive Firestore Document Failed Build Result Data",
-						Error: &collectionxservice.ErrorProto{
-							General: err.Error(),
-						},
-					}})
+				return status.Error(codes.Internal, err.Error())
 			}
 
 			response.DocumentChange = &collectionxservice.DocumentChange{

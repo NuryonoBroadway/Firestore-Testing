@@ -1,6 +1,7 @@
 package collectioncallgrpc
 
 import (
+	"context"
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
 	collectionxserver "firebaseapi/collectionx/collectionx_server"
 	"firebaseapi/helper"
@@ -11,8 +12,26 @@ import (
 )
 
 func CallGrpc(cfg *collectionxserver.ServerConfig) *grpc.Server {
-	collx := collectionxserver.NewCollectionCore_SourceDocument(cfg)
+	ctx := context.Background()
+
+	store := cfg.RegistryFirestoreClient(ctx)
+	pubsub := cfg.RegistryPubSubConsumer(ctx)
+
+	collx := collectionxserver.NewCollectionCore_SourceDocument(cfg, store)
 	srv := collectionxserver.NewServer(collx)
+	go func() {
+		subs := collectionxserver.NewConsumer(cfg, collx, pubsub)
+		if err := subs.Subscribe(
+			ctx,
+			subs.Processing,
+			collectionxserver.WithMaxConcurrent(2),
+			collectionxserver.WithSubscribeAsync(true),
+			collectionxserver.WithTopic("PrivyFlowSe"),
+		); err != nil {
+			logger.Fatalf("pusub down: %v", err)
+		}
+	}()
+
 	defer srv.GracefulStop()
 
 	logger.Infof("starting privypass-collection-core-se grpc services... 0.0.0.0:9090")

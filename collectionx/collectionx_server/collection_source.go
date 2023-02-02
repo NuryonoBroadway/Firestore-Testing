@@ -3,8 +3,10 @@ package collectionxserver
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"cloud.google.com/go/firestore"
+	"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -14,6 +16,7 @@ var (
 // Collection Core Source Contract
 type CollectionCore_SourceDocument interface {
 	Retrive(ctx context.Context, p *Payload) (data *DataResponse, err error)
+	Save(ctx context.Context, p *Payload) error
 	Snapshots(ctx context.Context, p *Payload) (col *firestore.QuerySnapshotIterator, doc *firestore.DocumentSnapshotIterator, err error)
 }
 
@@ -23,26 +26,41 @@ type collectionCore_SourceDocumentImplementation struct {
 	config *ServerConfig
 }
 
-
-func NewCollectionCore_SourceDocument(config *ServerConfig) *collectionCore_SourceDocumentImplementation {
-	client := RegistryFirestoreClient(config)
+func NewCollectionCore_SourceDocument(config *ServerConfig, client *firestore.Client) *collectionCore_SourceDocumentImplementation {
 	return &collectionCore_SourceDocumentImplementation{client, config}
 }
 
-// Helper
-func (sd *collectionCore_SourceDocumentImplementation) rootCollection(p *Payload) *firestore.CollectionRef {
-	sd.config.RootCollection = p.RootCollection
-	return sd.client.Collection(sd.config.RootCollection)
-}
+func (sd *collectionCore_SourceDocumentImplementation) Save(ctx context.Context, p *Payload) error {
+	spew.Dump(p)
 
-func (sd *collectionCore_SourceDocumentImplementation) rootDocument(p *Payload) *firestore.DocumentRef {
-	sd.config.RootDocument = p.RootDocument
-	return sd.rootCollection(p).Doc(sd.config.RootDocument)
+	if p == nil {
+		return fmt.Errorf("payload is empty")
+	}
+
+	var (
+		_, doc, _ = sd.pathBuilder(p)
+	)
+
+	return sd.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		data := make(map[string]interface{})
+		for i := 0; i < len(p.Data.Row); i++ {
+			data[p.Data.Row[i].Path] = p.Data.Row[i].Value
+		}
+
+		if p.Data.IsMergeAll {
+			// universal set can create or update
+			return tx.Set(doc, data, firestore.MergeAll)
+		}
+
+		return tx.Set(doc, data)
+
+	})
+
 }
 
 func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Context, p *Payload) (data *DataResponse, err error) {
 	var (
-		colRef, docRef, isLastDoc = pathBuilder(sd, p)
+		colRef, docRef, isLastDoc = sd.pathBuilder(p)
 		isLastCol                 = !isLastDoc
 
 		isFindAll = isLastCol
@@ -50,23 +68,19 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 	)
 
 	if isFindAll {
-		query := queryBuilder(colRef.Query, p)
-		snaps, err := query.Documents(ctx).GetAll()
+		docs, err := colRef.Data(p, ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		docs := make([]map[string]interface{}, len(snaps))
-		for i := 0; i < len(snaps); i++ {
-			docs[i] = map[string]interface{}{
-				"ref_id": snaps[i].Ref.ID,
-				"object": snaps[i].Data(),
-			}
+		size, err := colRef.Count(ctx)
+		if err != nil {
+			return nil, err
 		}
 
 		return &DataResponse{
-			Total: len(snaps),
-			Data:  docs,
+			Size: size,
+			Data: docs,
 		}, nil
 	} else if isFindOne {
 		snap, err := docRef.Get(ctx)
@@ -75,8 +89,8 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 		}
 
 		return &DataResponse{
-			Total: 1,
-			Data:  snap.Data(),
+			Size: 1,
+			Data: snap.Data(),
 		}, nil
 	}
 
@@ -85,7 +99,7 @@ func (sd *collectionCore_SourceDocumentImplementation) Retrive(ctx context.Conte
 
 func (sd *collectionCore_SourceDocumentImplementation) Snapshots(ctx context.Context, p *Payload) (col *firestore.QuerySnapshotIterator, doc *firestore.DocumentSnapshotIterator, err error) {
 	var (
-		colRef, docRef, isLastDoc = pathBuilder(sd, p)
+		colRef, docRef, isLastDoc = sd.pathBuilder(p)
 		isLastCol                 = !isLastDoc
 
 		isFindAll = isLastCol
@@ -93,7 +107,7 @@ func (sd *collectionCore_SourceDocumentImplementation) Snapshots(ctx context.Con
 	)
 
 	if isFindAll {
-		query := queryBuilder(colRef.Query, p)
+		query := queryBuilder(colRef.colRef.Query, p)
 		return query.Snapshots(ctx), nil, nil
 	} else if isFindOne {
 		return nil, docRef.Snapshots(ctx), nil

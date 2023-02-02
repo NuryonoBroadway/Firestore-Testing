@@ -3,17 +3,18 @@ package collectioncallgrpc
 import (
 	"context"
 	collectionxclient "firebaseapi/collectionx/collectionx_client"
+	"log"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 )
 
-func Test_Get_Documents_With_Limit_GRPC(t *testing.T) {
+func Test_Save_Documents_Update_GRPC(t *testing.T) {
 	cfg, err := collectionxclient.NewClientConfig(
 		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
 		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
 		collectionxclient.WithProjectRootDocuments("default"),
-		collectionxclient.WithPubSubTopic("pubsub"),
+		collectionxclient.WithProjectName("cellular-effect-306806"),
 	)
 	if err != nil {
 		t.Error(err)
@@ -26,19 +27,23 @@ func Test_Get_Documents_With_Limit_GRPC(t *testing.T) {
 
 	conn, err := collection_core_client.OpenConnection(ctx)
 	if err != nil {
-		t.Error(err)
+		log.Fatal(err)
 	}
 	defer conn.Close()
-
 	var (
-		// main_col = collectionx.NewCollectionPayloads(collectionx.WithRootCollection(config.ExternalCollection))
-		query = conn.Col("development-privypass_collection-core-se").Doc("default").Col("root-collection-test").Doc("default").Col("cities")
-		// query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
+		query = conn.Col("development-privypass_collection-core-se").Doc("default").Col("root-collection-test").Doc("default").Col("cities").Doc("SF")
+		ready = query.Set([]collectionxclient.Row{
+			{
+				Path:  "capital",
+				Value: false,
+			},
+		}, true)
 	)
-	limit := 1
-	res, err := query.Limit(limit).Retrive()
+
+	res, err := ready.Save()
 	if err != nil {
 		t.Error(err)
 	}
 	spew.Dump(res)
+
 }

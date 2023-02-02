@@ -3,27 +3,13 @@ syntax = "proto3";
 package collectionx;
 
 import "google/protobuf/timestamp.proto";
-// import "google/protobuf/any.proto";
 
 option go_package = "protobuf/privy/v1/collectionxservice";
 
-message ErrorProto {
-    string general = 1;
-    repeated ValidationErrorProto validation = 2;
-}
-
-message ValidationErrorProto {
-    string key = 1;
-    string value = 2;
-}
 
 message StandardAPIProto {
-    string status = 1;
-    string entity = 2;
-    string state = 3;
     string message = 4;
     optional MetaProto meta = 5;
-    optional ErrorProto error = 6;
 }
 
 message DateRangeProto {
@@ -35,11 +21,7 @@ message DateRangeProto {
 message FilterProto {
     string by = 1;
     string op = 2;
-    oneof val {
-        bool val_bool = 3;
-        string val_string = 4;
-        int64 val_int = 5;
-    };
+    bytes val = 3;
 } 
 
 message SortProto {
@@ -54,20 +36,12 @@ message FilteringProto {
     optional DateRangeProto date_range = 3;
 }
 
-message PaginationProto {
-    int32 page = 1;
-}
-
 message MetaProto {
     int32 page = 1;
     int32 per_page = 2;
     int32 total = 3;
 }
 
-message MetadataProto {
-    PaginationProto pagination = 1;
-    FilteringProto filtering = 2;
-}
 
 message ParameterRequestProto {
     int32 per_page = 1;

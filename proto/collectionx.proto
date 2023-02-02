@@ -23,17 +23,19 @@ message PayloadProto {
     string root_document = 2;
     google.protobuf.Struct data = 3;
     int32 limit = 4;
-    bool is_pagination = 5;
-    bool is_delete = 6;
-	repeated PathProto path = 7;
-    FilteringProto query = 8;
-    PaginationProto pagination = 9;
+    bool is_collection_group = 5;
+    bool is_pagination = 6;
+    bool is_delete = 7;
+	repeated PathProto path = 8;
+    FilteringProto query = 9;
+    int32 page = 10;
 }
 
 message PathProto {
 	string collection_id = 1;
 	string document_id = 2;
 	bool new_document = 3;
+    string collection_group = 4;
 }
 
 /*

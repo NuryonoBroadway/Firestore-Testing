@@ -1,20 +1,21 @@
 package collectionxserver
 
 import (
+	"context"
+	"errors"
 	"firebaseapi/helper"
+	"fmt"
 
 	"cloud.google.com/go/firestore"
 )
 
-func pathBuilder(sd *collectionCore_SourceDocumentImplementation, p *Payload) (*firestore.CollectionRef, *firestore.DocumentRef, bool) {
+func (sd *collectionCore_SourceDocumentImplementation) pathBuilder(p *Payload) (*collectionAggregator, *firestore.DocumentRef, bool) {
 	var (
-		isLastDoc bool
-		docRef    *firestore.DocumentRef
-		colRef    *firestore.CollectionRef
+		isLastDoc   bool
+		docRef      *firestore.DocumentRef
+		colRef      *firestore.CollectionRef
+		colGroupRef *firestore.CollectionGroupRef
 	)
-
-	colRef = sd.rootCollection(p)
-	docRef = sd.rootDocument(p)
 
 	// Path Builder
 	for i := 0; i < len(p.Path); i++ {
@@ -23,18 +24,36 @@ func pathBuilder(sd *collectionCore_SourceDocumentImplementation, p *Payload) (*
 			docRef = colRef.NewDoc()
 		}
 
+		if p.Path[i].CollectionGroup != "" {
+			isLastDoc = false
+			colGroupRef = sd.client.CollectionGroup(p.Path[i].CollectionGroup)
+		}
+
 		if p.Path[i].DocumentID != "" {
 			isLastDoc = true
-			docRef = colRef.Doc(p.Path[i].DocumentID)
+
+			if i == 0 {
+				docRef = sd.client.Doc(p.Path[i].DocumentID)
+			} else {
+				docRef = colRef.Doc(p.Path[i].DocumentID)
+			}
 		}
 
 		if p.Path[i].CollectionID != "" {
 			isLastDoc = false
-			colRef = docRef.Collection(p.Path[i].CollectionID)
+
+			if i == 0 {
+				colRef = sd.client.Collection(p.Path[i].CollectionID)
+			} else {
+				colRef = docRef.Collection(p.Path[i].CollectionID)
+			}
 		}
 	}
 
-	return colRef, docRef, isLastDoc
+	return &collectionAggregator{
+		colRef:      colRef,
+		colGroupRef: colGroupRef,
+	}, docRef, isLastDoc
 }
 
 func queryBuilder(query firestore.Query, p *Payload) firestore.Query {
@@ -74,10 +93,60 @@ func queryBuilder(query firestore.Query, p *Payload) firestore.Query {
 
 	// limitation on firestore cursor is we cannot specify the page number we want
 	if p.isPagination {
-		page := p.pagination.Page
+		page := p.page
 		offset := (page - 1) * p.limit
 		query = query.Offset(int(offset))
 	}
 
 	return query
+}
+
+type collectionAggregator struct {
+	colRef      *firestore.CollectionRef
+	colGroupRef *firestore.CollectionGroupRef
+}
+
+func (ca *collectionAggregator) Data(p *Payload, ctx context.Context) ([]ListValue, error) {
+	var query firestore.Query
+	if ca.colGroupRef != nil {
+		query = queryBuilder(ca.colGroupRef.Query, p)
+	} else if ca.colRef != nil {
+		query = queryBuilder(ca.colRef.Query, p)
+	}
+
+	snaps, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	docs := make([]ListValue, len(snaps))
+	for i := 0; i < len(snaps); i++ {
+		docs[i] = ListValue{
+			RefID:  snaps[i].Ref.ID,
+			Object: snaps[i].Data(),
+		}
+	}
+
+	return docs, nil
+}
+
+func (ca *collectionAggregator) Count(ctx context.Context) (int, error) {
+	if ca.colRef != nil {
+		builder := fmt.Sprintf("aggregator_%v", ca.colRef.ID)
+		total, err := ca.colRef.Doc(builder).Get(ctx)
+		if err != nil {
+			return 0, err
+		}
+
+		var a Aggregator
+		if err := total.DataTo(&a); err != nil {
+			return 0, err
+		}
+
+		return a.Size, nil
+	} else if ca.colGroupRef != nil {
+		return 0, nil
+	}
+
+	return 0, errors.New("not-implemented")
 }
