@@ -73,8 +73,15 @@ func (c *client) checkConnection() error {
 		c.conn = connection
 	}
 
+	attempt := -1
 	perform := func(ctx context.Context) error {
 		for {
+			attempt++
+
+			if attempt == 10 {
+				return errors.New("attempt in max reach")
+			}
+
 			switch c.conn.GetState() {
 			case connectivity.Connecting:
 				if err := gax.Sleep(ctx, delay); err != nil {
@@ -237,48 +244,26 @@ func (p *Payload) Retrive() (response *StandardAPI, err error) {
 		Payload: &payloadProto,
 	}
 
-	perform := func(ctx context.Context, req *collectionxservice.RetriveRequest) (*collectionxservice.RetriveResponse, error) {
-		for {
-			res, err := collectionxservice.NewServiceCollectionClient(p.client.conn).Retrive(p.client.ctx, req)
-			if err != nil {
-				if status, ok := status.FromError(err); ok {
-					switch status.Code() {
-					case codes.Unavailable:
-						err := p.client.checkConnection()
-						if err != nil {
-							return nil, err
-						}
-					}
-				}
-
-				if delay, retry := p.client.retryer.Retry(err); retry {
-					if err := gax.Sleep(ctx, delay); err != nil {
-						return nil, err
-					}
-					p.client.logf.Info("Fetch Grpc Response, Retrying...")
-					continue
-				}
-				return nil, err
-			}
-			return res, nil
-		}
-	}
-
-	res, err := perform(p.client.ctx, req)
+	res, err := collectionxservice.NewServiceCollectionClient(p.client.conn).Retrive(p.client.ctx, req)
 	if err != nil {
-		erros := status.Convert(err)
 		response.StandardAPIDefault = NewErrorResponse()
+		if status, ok := status.FromError(err); ok {
+			switch status.Code() {
+			case codes.Unavailable:
+				err := p.client.checkConnection()
+				if err != nil {
+					return nil, err
+				}
+			case codes.Internal:
+				response.StandardAPIDefault = response.WithRepresentative(helper.INTERNAL, status.Message())
+			case codes.NotFound:
+				response.StandardAPIDefault = response.WithRepresentative(helper.NOT_FOUND, status.Message())
+			default:
+				response.StandardAPIDefault = response.WithRepresentative(helper.FAILED_PRECONDITION, fmt.Errorf("failed retrive collection core: %w", err).Error())
+			}
 
-		switch erros.Code() {
-		case codes.Internal:
-			response.StandardAPIDefault = response.WithRepresentative(helper.INTERNAL, erros.Message())
-		case codes.NotFound:
-			response.StandardAPIDefault = response.WithRepresentative(helper.NOT_FOUND, erros.Message())
-		default:
-			response.StandardAPIDefault = response.WithRepresentative(helper.FAILED_PRECONDITION, fmt.Errorf("failed retrive collection core: %w", err).Error())
+			return response, err
 		}
-
-		return response, err
 	}
 
 	response.StandardAPIDefault = NewSuccessResponse().WithRepresentative(helper.SUCCESS, res.Api.Message)
@@ -346,9 +331,9 @@ func (s *CollectionxSnapshots) message() bool {
 		if status, ok := status.FromError(err); ok {
 			switch status.Code() {
 			case codes.Unavailable:
-				s.client.conn.Connect()
-				if s.client.conn.WaitForStateChange(context.Background(), connectivity.Ready) {
-					s.client.conn.ResetConnectBackoff()
+				err := s.client.checkConnection()
+				if err != nil {
+					return false
 				}
 			}
 		}
@@ -462,37 +447,21 @@ func (p *Payload) Snapshots() (*CollectionxSnapshots, error) {
 		Payload: &payloadProto,
 	}
 
-	perform := func(ctx context.Context) (collectionxservice.ServiceCollection_SnapshotsClient, error) {
-		for {
-			stream, err := collectionxservice.NewServiceCollectionClient(p.client.conn).Snapshots(ctx, req)
-			if err != nil {
-				if status, ok := status.FromError(err); ok {
-					switch status.Code() {
-					case codes.Unavailable:
-						err := p.client.checkConnection()
-						if err != nil {
-							return nil, err
-						}
-					}
+	stream, err := collectionxservice.NewServiceCollectionClient(p.client.conn).Snapshots(p.client.ctx, req)
+	if err != nil {
+		if status, ok := status.FromError(err); ok {
+			switch status.Code() {
+			case codes.Unavailable:
+				err := p.client.checkConnection()
+				if err != nil {
+					return nil, err
 				}
-
-				if delay, retry := p.client.retryer.Retry(err); retry {
-					if err := gax.Sleep(ctx, delay); err != nil {
-						return nil, err
-					}
-					p.client.logf.Info("Fetch Grpc Response, Retrying...")
-					continue
-				}
-				return nil, err
+			default:
+				return nil, status.Err()
 			}
-			return stream, nil
 		}
 	}
 
-	stream, err := perform(p.client.ctx)
-	if err != nil {
-		return nil, err
-	}
 	return &CollectionxSnapshots{
 		isCol:  p.Path[len(p.Path)-1].CollectionID != "",
 		ws:     stream,

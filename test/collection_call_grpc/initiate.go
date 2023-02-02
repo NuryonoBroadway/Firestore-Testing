@@ -23,7 +23,6 @@ func CallGrpc(cfg *collectionxserver.ServerConfig) *grpc.Server {
 		subs := collectionxserver.NewConsumer(cfg, collx, pubsub)
 		if err := subs.Subscribe(
 			ctx,
-			subs.Processing,
 			collectionxserver.WithMaxConcurrent(2),
 			collectionxserver.WithSubscribeAsync(true),
 			collectionxserver.WithTopic("PrivyFlowSe"),

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/firestore"
-	"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -31,15 +30,11 @@ func NewCollectionCore_SourceDocument(config *ServerConfig, client *firestore.Cl
 }
 
 func (sd *collectionCore_SourceDocumentImplementation) Save(ctx context.Context, p *Payload) error {
-	spew.Dump(p)
-
 	if p == nil {
 		return fmt.Errorf("payload is empty")
 	}
 
-	var (
-		_, doc, _ = sd.pathBuilder(p)
-	)
+	var _, doc, _ = sd.pathBuilder(p)
 
 	return sd.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		data := make(map[string]interface{})
