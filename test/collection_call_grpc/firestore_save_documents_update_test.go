@@ -35,7 +35,13 @@ func Test_Save_Documents_Update_GRPC(t *testing.T) {
 		ready = query.Set([]collectionxclient.Row{
 			{
 				Path:  "capital",
-				Value: false,
+				Value: true,
+			}, {
+				Path:  "country",
+				Value: "USA",
+			}, {
+				Path:  "name",
+				Value: "San Fransisco",
 			},
 		}, true)
 	)

@@ -32,20 +32,20 @@ func Test_Save_Documents_Create_GRPC(t *testing.T) {
 	}
 	defer conn.Close()
 	var (
-		query = conn.Col("development-privypass_collection-core-se").Doc("default").Col("root-collection-test").Doc("default").Col("cities").Doc("JKT")
+		query = conn.Col("development-privypass_collection-core-se").Doc("default").Col("root-collection-test").Doc("default").Col("cities").Doc("BD")
 		ready = query.Set([]collectionxclient.Row{
 			{
 				Path:  "country",
 				Value: "Indonesia",
 			}, {
 				Path:  "capital",
-				Value: true,
+				Value: false,
 			}, {
 				Path:  "name",
-				Value: "Jakarta",
+				Value: "Bandung",
 			}, {
-				Path:  "Population",
-				Value: 89000000000,
+				Path:  "population",
+				Value: 122100000,
 			}, {
 				Path:  "created_at",
 				Value: time.Now(),

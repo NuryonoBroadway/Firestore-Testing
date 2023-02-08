@@ -25,7 +25,7 @@ type Collector interface {
 	OrderBy(by string, dir OrderDir) *Payload
 	Where(by string, op helper.Operator, val interface{}) *Payload
 	Limit(limit int) *Payload
-	DataRange(field string, start time.Time, end time.Time) *Payload
+	DateRange(field string, start time.Time, end time.Time) *Payload
 	Page(page int32) *Payload
 	Snapshots() (*CollectionxSnapshots, error)
 	Retrive() (*StandardAPI, error)
@@ -35,7 +35,7 @@ type CollectorGroup interface {
 	OrderBy(by string, dir OrderDir) *Payload
 	Where(by string, op helper.Operator, val interface{}) *Payload
 	Limit(limit int) *Payload
-	DataRange(field string, start time.Time, end time.Time) *Payload
+	DateRange(field string, start time.Time, end time.Time) *Payload
 	Page(page int32) *Payload
 	Snapshots() (*CollectionxSnapshots, error)
 	Retrive() (*StandardAPI, error)
@@ -157,7 +157,7 @@ func (p *Payload) OrderBy(by string, dir OrderDir) *Payload {
 	return p
 }
 
-func (p *Payload) DataRange(field string, start time.Time, end time.Time) *Payload {
+func (p *Payload) DateRange(field string, start time.Time, end time.Time) *Payload {
 	p.query.DateRange = DateRange_Query{
 		Field: field,
 		Start: start,

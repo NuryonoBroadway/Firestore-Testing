@@ -14,7 +14,8 @@ func Test_Get_Documents_With_Filter_GRPC(t *testing.T) {
 		collectionxclient.WithGrpcAddress("0.0.0.0:9090"),
 		collectionxclient.WithProjectRootCollection("development-privypass_collection-core-se"),
 		collectionxclient.WithProjectRootDocuments("default"),
-		collectionxclient.WithPubSubTopic("pubsub"),
+		collectionxclient.WithPubSubTopic("test-api"),
+		collectionxclient.WithProjectName("cellular-effect-306806"),
 	)
 	if err != nil {
 		t.Error(err)

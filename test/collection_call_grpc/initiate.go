@@ -14,22 +14,13 @@ import (
 func CallGrpc(cfg *collectionxserver.ServerConfig) *grpc.Server {
 	ctx := context.Background()
 
-	store := cfg.RegistryFirestoreClient(ctx)
-	pubsub := cfg.RegistryPubSubConsumer(ctx)
-
-	collx := collectionxserver.NewCollectionCore_SourceDocument(cfg, store)
-	srv := collectionxserver.NewServer(collx)
-	go func() {
-		subs := collectionxserver.NewConsumer(cfg, collx, pubsub)
-		if err := subs.Subscribe(
-			ctx,
-			collectionxserver.WithMaxConcurrent(2),
-			collectionxserver.WithSubscribeAsync(true),
-			collectionxserver.WithTopic("PrivyFlowSe"),
-		); err != nil {
-			logger.Fatalf("pusub down: %v", err)
-		}
-	}()
+	srv := collectionxserver.NewServer(
+		ctx, 
+		cfg, 
+		collectionxserver.WithMaxConcurrent(5),
+		collectionxserver.WithSubscribeAsync(true),
+		collectionxserver.WithSubscriberID("PrivyFlowSe"),
+	)
 
 	defer srv.GracefulStop()
 

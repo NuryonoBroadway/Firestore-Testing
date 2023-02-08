@@ -116,7 +116,7 @@ type Opts func(c *Options)
 type Options struct {
 	MaxConcurrent  int
 	SubscribeAsync bool
-	Topic          string
+	SubscribeID    string
 }
 
 func defaults() *Options {
@@ -125,9 +125,9 @@ func defaults() *Options {
 	}
 }
 
-func WithTopic(v string) Opts {
+func WithSubscriberID(v string) Opts {
 	return func(c *Options) {
-		c.Topic = v
+		c.SubscribeID = v
 	}
 }
 

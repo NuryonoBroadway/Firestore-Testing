@@ -37,7 +37,7 @@ func Test_Get_Documents_With_DateRange_GRPC(t *testing.T) {
 		// query = conn.Doc("default").Col("root-collection-test").Doc("default").Col("cities")
 	)
 
-	res, err := query.OrderBy("created_at", collectionxclient.Asc).DataRange("created_at", time.Now(), time.Now().AddDate(2, 0, 0)).Retrive()
+	res, err := query.OrderBy("created_at", collectionxclient.Asc).DateRange("created_at", time.Now(), time.Now().AddDate(2, 0, 0)).Retrive()
 	if err != nil {
 		t.Error(err)
 	}

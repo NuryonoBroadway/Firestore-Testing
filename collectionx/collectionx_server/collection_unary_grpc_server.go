@@ -7,6 +7,7 @@ import (
 	collectionxservice "firebaseapi/collectionx/collectionx_service"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/pubsub"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,17 +15,26 @@ import (
 )
 
 // Collection Core GRPC Server
-func NewServer(source CollectionCore_SourceDocument, grpcOpt ...grpc.ServerOption) *grpc.Server {
-	if source == nil {
-		return nil
+func NewServer(ctx context.Context, cfg *ServerConfig, opts ...Opts) *grpc.Server {
+	store := cfg.RegistryFirestoreClient(ctx)
+	pubsub := cfg.RegistryPubSubConsumer(ctx)
+
+	opt := defaults()
+	for i := 0; i < len(opts); i++ {
+		opts[i](opt)
 	}
 
 	var (
-		gsrv = grpc.NewServer(grpcOpt...)
-		srv  = NewCollectionCoreServer(source)
+		source = NewCollectionCore_SourceDocument(cfg, store)
+		gsrv   = grpc.NewServer(grpc.KeepaliveEnforcementPolicy(kaep), grpc.KeepaliveParams(kasp))
+		srv    = NewCollectionCoreServer(pubsub, source)
+		subs   = NewConsumer(opt, source, pubsub)
 	)
 
 	collectionxservice.RegisterServiceCollectionServer(gsrv, srv)
+
+	go subs.Read(ctx)
+	go subs.Write(ctx)
 
 	return gsrv
 }
@@ -35,7 +45,7 @@ type server struct {
 	collectionxservice.UnimplementedServiceCollectionServer
 }
 
-func NewCollectionCoreServer(source CollectionCore_SourceDocument) *server {
+func NewCollectionCoreServer(client *pubsub.Client, source CollectionCore_SourceDocument) *server {
 	return &server{
 		source: source,
 	}
